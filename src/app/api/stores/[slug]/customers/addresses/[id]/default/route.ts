@@ -12,7 +12,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = verifyCustomerToken(token)
+    const payload = await verifyCustomerToken(token)  // ← added await
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
