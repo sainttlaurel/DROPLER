@@ -50,5 +50,6 @@ export const paymentSchema = z.discriminatedUnion('method', [
   }),
 ])
 
+
 export type ShippingFormData = z.infer<typeof shippingSchema>
-export type PaymentFormData = z.infer<typeof paymentSchema>
+export type { PaymentFormData } from '@/types/checkout'
