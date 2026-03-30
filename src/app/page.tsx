@@ -1,15 +1,7 @@
 import Link from 'next/link'
 import { TopNav } from '@/components/layout/TopNav'
-import { PLAN_DETAILS } from '@/lib/constants'
 
 export default function HomePage() {
-  const plans = [
-    { key: 'FREE',       cta: 'Start Free',        highlight: false },
-    { key: 'STARTER',    cta: 'Get Starter',        highlight: false },
-    { key: 'PRO',        cta: 'Get Pro',            highlight: true  },
-    { key: 'ENTERPRISE', cta: 'Get Enterprise',     highlight: false },
-  ] as const
-
   return (
     <main className="min-h-screen bg-[#f5f0e8]">
       <TopNav />
@@ -71,60 +63,27 @@ export default function HomePage() {
       <section id="pricing" className="max-w-7xl mx-auto px-6 py-24 border-b-4 border-[#1a1a1a]">
         <h2 className="font-headline font-black text-6xl uppercase tracking-tighter mb-4">Pricing</h2>
         <p className="font-body text-xl text-[#1a1a1a]/70 mb-16">Simple. No hidden fees.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-          {plans.map(({ key, cta, highlight }) => {
-            const p = PLAN_DETAILS[key]
-            return (
-              <div
-                key={key}
-                className={`relative border-4 border-[#1a1a1a] p-8 shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] flex flex-col ${highlight ? 'bg-[#ffcc00]' : 'bg-white'}`}
-              >
-                {p.popular && (
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white font-headline font-black uppercase text-xs px-4 py-1 whitespace-nowrap">
-                    Most Popular
-                  </div>
-                )}
-                <h3 className="font-headline font-black uppercase text-3xl mb-1">{p.name}</h3>
-                <div className="font-headline font-black text-5xl mb-1">
-                  {p.price === 0 ? '$0' : `$${p.price}`}
-                  {p.price > 0 && <span className="text-xl font-bold">/mo</span>}
-                </div>
-                <p className="font-body text-[#1a1a1a]/70 mb-6 text-sm">
-                  {p.price === 0 ? 'Get started for free.' : `$${p.annualPrice}/yr billed annually.`}
-                </p>
-                <ul className="space-y-2 mb-8 flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 font-body font-semibold text-sm">
-                      <span className="text-[#1a1a1a] mt-0.5">✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/auth/register">
-                  <button className="w-full py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase bg-[#1a1a1a] text-white hover:bg-[#0055ff] transition-colors">
-                    {cta}
-                  </button>
-                </Link>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="testimonials" className="max-w-7xl mx-auto px-6 py-24 border-b-4 border-[#1a1a1a]">
-        <h2 className="font-headline font-black text-6xl uppercase tracking-tighter mb-16">Testimonials</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl">
           {[
-            { name: 'Maria S.', role: 'Store Owner', text: 'Dropler helped me launch my store in a single afternoon. The dashboard is clean and everything just works.' },
-            { name: 'James K.', role: 'Entrepreneur', text: 'Switched from a much more expensive platform. Same features, fraction of the cost. Highly recommend.' },
-            { name: 'Priya L.', role: 'Dropshipper', text: 'The order tracking and analytics are exactly what I needed. My customers love the storefront too.' },
-          ].map((t) => (
-            <div key={t.name} className="border-4 border-[#1a1a1a] bg-white p-8 shadow-[6px_6px_0px_0px_rgba(26,26,26,1)]">
-              <p className="font-body text-[#1a1a1a]/70 mb-6 italic">"{t.text}"</p>
-              <div>
-                <p className="font-headline font-black uppercase text-sm">{t.name}</p>
-                <p className="font-body text-xs text-[#1a1a1a]/50">{t.role}</p>
-              </div>
+            { plan: 'Free', price: '$0', desc: 'Get started with the basics.', features: ['1 store', 'Up to 50 products', 'Order management', 'Basic analytics'], cta: 'Start Free', highlight: false },
+            { plan: 'Pro', price: '$29/mo', desc: 'Everything you need to scale.', features: ['Unlimited products', 'Advanced analytics', 'Priority support', 'Custom domain'], cta: 'Get Pro', highlight: true },
+          ].map((p) => (
+            <div key={p.plan} className={`border-4 border-[#1a1a1a] p-8 shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] ${p.highlight ? 'bg-[#ffcc00]' : 'bg-white'}`}>
+              <h3 className="font-headline font-black uppercase text-3xl mb-1">{p.plan}</h3>
+              <div className="font-headline font-black text-5xl mb-2">{p.price}</div>
+              <p className="font-body text-[#1a1a1a]/70 mb-6">{p.desc}</p>
+              <ul className="space-y-2 mb-8">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2 font-body font-semibold">
+                    <span className="text-[#1a1a1a]">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth/register">
+                <button className="w-full py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase bg-[#1a1a1a] text-white hover:bg-[#0055ff] transition-colors">
+                  {p.cta}
+                </button>
+              </Link>
             </div>
           ))}
         </div>
