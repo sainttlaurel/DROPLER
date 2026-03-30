@@ -12,12 +12,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = verifyCustomerToken(token)
+    const payload = await verifyCustomerToken(token)  // ← await added
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Get addresses for this customer
     const addresses = await prisma.address.findMany({
       where: { customerId: payload.customerId },
       orderBy: [
@@ -46,14 +45,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = verifyCustomerToken(token)
+    const payload = await verifyCustomerToken(token)  // ← await added
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     const { name, address, city, state, zip, country, phone, isDefault } = await req.json()
 
-    // If setting as default, unset other defaults
     if (isDefault) {
       await prisma.address.updateMany({
         where: { customerId: payload.customerId },
@@ -61,7 +59,6 @@ export async function POST(
       })
     }
 
-    // Create new address
     const newAddress = await prisma.address.create({
       data: {
         customerId: payload.customerId,
