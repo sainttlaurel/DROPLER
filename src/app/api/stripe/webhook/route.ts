@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 
+function getPlanFromPriceId(priceId: string): string {
+  const priceMap: Record<string, string> = {
+    'price_1TGb744DtPVuhqnvvqeonWO2': 'STARTER',
+    'price_1TGb6d4DtPVuhqnvgghek4QU': 'PRO',
+    'price_1TGb6I4DtPVuhqnvZbqWc2P9': 'ENTERPRISE',
+  }
+  return priceMap[priceId] ?? 'FREE'
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any,
 })
@@ -23,6 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
@@ -32,6 +42,8 @@ export async function POST(req: NextRequest) {
         const store = await prisma.store.findUnique({ where: { userId } })
         if (!store) break
 
+        const plan = getPlanFromPriceId(session.metadata?.priceId ?? '')
+
         await prisma.subscription.upsert({
           where: { storeId: store.id },
           update: {
@@ -39,7 +51,7 @@ export async function POST(req: NextRequest) {
             stripeSubscriptionId: session.subscription as string,
             stripePriceId: session.metadata?.priceId,
             status: 'ACTIVE',
-            plan: 'PRO',
+            plan,
           },
           create: {
             storeId: store.id,
@@ -47,7 +59,7 @@ export async function POST(req: NextRequest) {
             stripeSubscriptionId: session.subscription as string,
             stripePriceId: session.metadata?.priceId,
             status: 'ACTIVE',
-            plan: 'PRO',
+            plan,
           },
         })
         break

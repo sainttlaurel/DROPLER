@@ -71,12 +71,12 @@ export function isValidSubscriptionPlan(value: string): value is SubscriptionPla
   return SUBSCRIPTION_PLAN_VALUES.includes(value as SubscriptionPlan)
 }
 
-// Single source of truth for all plan details — use this everywhere
 export const PLAN_DETAILS: Record<SubscriptionPlan, {
   name: string
   price: number
   annualPrice: number
   popular: boolean
+  priceId: string | null
   features: string[]
   limits: { products: number; orders: number; stores: number }
 }> = {
@@ -85,6 +85,7 @@ export const PLAN_DETAILS: Record<SubscriptionPlan, {
     price: 0,
     annualPrice: 0,
     popular: false,
+    priceId: null,
     features: [
       '1 store',
       'Up to 50 products',
@@ -99,6 +100,7 @@ export const PLAN_DETAILS: Record<SubscriptionPlan, {
     price: 19,
     annualPrice: 190,
     popular: false,
+    priceId: 'price_1TGb744DtPVuhqnvvqeonWO2',
     features: [
       '1 store',
       'Up to 500 products',
@@ -113,6 +115,7 @@ export const PLAN_DETAILS: Record<SubscriptionPlan, {
     price: 49,
     annualPrice: 490,
     popular: true,
+    priceId: 'price_1TGb6d4DtPVuhqnvgghek4QU',
     features: [
       'Up to 3 stores',
       'Up to 5,000 products',
@@ -127,6 +130,7 @@ export const PLAN_DETAILS: Record<SubscriptionPlan, {
     price: 99,
     annualPrice: 990,
     popular: false,
+    priceId: 'price_1TGb6I4DtPVuhqnvZbqWc2P9',
     features: [
       'Unlimited stores',
       'Unlimited products',
