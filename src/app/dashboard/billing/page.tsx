@@ -7,11 +7,17 @@ import { SubscriptionPlan } from '@/lib/constants'
 import Link from 'next/link'
 
 const PLANS: Record<string, { name: string; price: number; features: string[]; limits: { products: number; orders: number } }> = {
-  FREE:       { name: 'Free',       price: 0,  features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],          limits: { products: 50,       orders: 100 } },
+  FREE:       { name: 'Free',       price: 0,  features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],            limits: { products: 50,       orders: 100 } },
   STARTER:    { name: 'Starter',    price: 19, features: ['Up to 500 products', 'Up to 1,000 orders/mo', 'Priority support'], limits: { products: 500,      orders: 1000 } },
-  GROWTH:     { name: 'Growth',     price: 49, features: ['Up to 5,000 products', 'Unlimited orders', 'Analytics'],          limits: { products: 5000,     orders: Infinity } },
+  PRO:        { name: 'Pro',        price: 49, features: ['Up to 5,000 products', 'Unlimited orders', 'Analytics'],           limits: { products: 5000,     orders: Infinity } },
   ENTERPRISE: { name: 'Enterprise', price: 99, features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'],    limits: { products: Infinity, orders: Infinity } },
 }
+
+const UPGRADE_PLANS = [
+  { key: 'STARTER',    name: 'Starter',    price: 19, features: ['500 products', '1,000 orders/mo', 'Priority support'] },
+  { key: 'PRO',        name: 'Pro',        price: 49, features: ['5,000 products', 'Unlimited orders', 'Analytics'] },
+  { key: 'ENTERPRISE', name: 'Enterprise', price: 99, features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'] },
+]
 
 interface BillingData {
   plan: SubscriptionPlan
@@ -30,9 +36,26 @@ const mockBillingHistory = [
 export default function BillingPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showPlansModal, setShowPlansModal] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [portalLoading, setPortalLoading] = useState(false)
 
   useEffect(() => {
     fetchBillingData()
+  }, [])
+
+  // Show success/cancel toast from Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success')) {
+      alert('🎉 Subscription activated! Your plan has been upgraded.')
+      window.history.replaceState({}, '', '/dashboard/billing')
+      fetchBillingData()
+    }
+    if (params.get('canceled')) {
+      alert('Checkout canceled. No changes were made.')
+      window.history.replaceState({}, '', '/dashboard/billing')
+    }
   }, [])
 
   const fetchBillingData = async () => {
@@ -50,16 +73,54 @@ export default function BillingPage() {
       const ordersList = Array.isArray(orders) ? orders : (orders.orders ?? [])
 
       setBillingData({
-        plan: (settings.store?.plan || 'FREE') as SubscriptionPlan,
+        plan: (settings.store?.subscription?.plan || settings.store?.plan || 'FREE') as SubscriptionPlan,
         productCount: productsList.length,
         orderCount: ordersList.length,
         supplierCount: 0,
-        hasStripeCustomer: false,
+        hasStripeCustomer: !!settings.store?.subscription?.stripeCustomerId,
       })
     } catch {
       setBillingData({ plan: 'FREE' as SubscriptionPlan, productCount: 0, orderCount: 0, supplierCount: 0, hasStripeCustomer: false })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Redirect to Stripe Checkout for a new/upgrade plan
+  const handleUpgrade = async (plan: string) => {
+    setCheckoutLoading(plan)
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const { url, error } = await res.json()
+      if (error) throw new Error(error)
+      window.location.href = url
+    } catch (err) {
+      alert('Failed to start checkout. Please try again.')
+    } finally {
+      setCheckoutLoading(null)
+    }
+  }
+
+  // Open Stripe Customer Portal for existing subscribers
+  const handleManageSubscription = async () => {
+    if (!billingData?.hasStripeCustomer) {
+      setShowPlansModal(true)
+      return
+    }
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const { url, error } = await res.json()
+      if (error) throw new Error(error)
+      window.location.href = url
+    } catch {
+      alert('Failed to open billing portal. Please try again.')
+    } finally {
+      setPortalLoading(false)
     }
   }
 
@@ -77,7 +138,7 @@ export default function BillingPage() {
   }
 
   const currentPlan = billingData?.plan || 'FREE'
-  const planData = PLANS[currentPlan]
+  const planData = PLANS[currentPlan] ?? PLANS['FREE']
   const limits = planData.limits
 
   const productPct = limits.products === Infinity ? 10 : Math.min(100, Math.round((billingData!.productCount / limits.products) * 100))
@@ -100,7 +161,10 @@ export default function BillingPage() {
             <Icon name="download" size="sm" />
             Export
           </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none">
+          <button
+            onClick={() => setShowPlansModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
+          >
             <Icon name="upgrade" size="sm" />
             Upgrade Plan
           </button>
@@ -120,8 +184,12 @@ export default function BillingPage() {
             <div className="font-headline font-black text-4xl tracking-tighter mb-4">
               ${planData.price}.00<span className="text-lg opacity-60">/mo</span>
             </div>
-            <button className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a]">
-              Manage Subscription
+            <button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a] disabled:opacity-50"
+            >
+              {portalLoading ? 'Loading...' : 'Manage Subscription'}
             </button>
           </div>
         </div>
@@ -174,7 +242,12 @@ export default function BillingPage() {
               <p className="font-body text-xs opacity-60 uppercase">Expires 12/26</p>
             </div>
           </div>
-          <button className="font-headline font-bold text-[#0055ff] uppercase hover:underline flex items-center gap-2">
+          {/* Update Card → opens Stripe portal */}
+          <button
+            onClick={handleManageSubscription}
+            disabled={portalLoading}
+            className="font-headline font-bold text-[#0055ff] uppercase hover:underline flex items-center gap-2 disabled:opacity-50"
+          >
             Update Card <Icon name="arrow_forward" size="sm" />
           </button>
         </div>
@@ -185,7 +258,10 @@ export default function BillingPage() {
             <h3 className="font-headline font-black uppercase text-3xl mb-2">Need More Power?</h3>
             <p className="font-bold opacity-70 text-sm uppercase">Unlock Enterprise features, unlimited processing, and 24/7 dedicated support.</p>
           </div>
-          <button className="bg-[#ffcc00] text-[#1a1a1a] px-6 py-4 border-2 border-[#ffcc00] shadow-[4px_4px_0px_0px_rgba(255,204,0,0.4)] font-headline font-black uppercase tracking-tighter hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all shrink-0">
+          <button
+            onClick={() => setShowPlansModal(true)}
+            className="bg-[#ffcc00] text-[#1a1a1a] px-6 py-4 border-2 border-[#ffcc00] shadow-[4px_4px_0px_0px_rgba(255,204,0,0.4)] font-headline font-black uppercase tracking-tighter hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all shrink-0"
+          >
             View Plans
           </button>
         </div>
@@ -256,6 +332,69 @@ export default function BillingPage() {
           </div>
         </Link>
       </div>
+
+      {/* ── Plans Modal ── */}
+      {showPlansModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-[#1a1a1a] shadow-[12px_12px_0px_0px_rgba(26,26,26,1)] w-full max-w-3xl">
+            {/* Modal Header */}
+            <div className="p-6 border-b-4 border-[#1a1a1a] bg-[#ffcc00] flex justify-between items-center">
+              <h2 className="font-headline font-black text-3xl uppercase">Choose a Plan</h2>
+              <button
+                onClick={() => setShowPlansModal(false)}
+                className="font-headline font-black text-2xl w-10 h-10 border-4 border-[#1a1a1a] flex items-center justify-center hover:bg-[#1a1a1a] hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Plan Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y-4 md:divide-y-0 md:divide-x-4 divide-[#1a1a1a]">
+              {UPGRADE_PLANS.map((p) => {
+                const isCurrent = currentPlan === p.key
+                return (
+                  <div key={p.key} className={`p-6 flex flex-col gap-4 ${isCurrent ? 'bg-[#eee9e0]' : 'bg-white'}`}>
+                    {isCurrent && (
+                      <span className="bg-[#1a1a1a] text-white text-[10px] font-headline font-black uppercase px-2 py-1 w-fit tracking-widest">
+                        Current Plan
+                      </span>
+                    )}
+                    <div className="font-headline font-black text-2xl uppercase">{p.name}</div>
+                    <div className="font-headline font-black text-4xl">
+                      ${p.price}<span className="text-base opacity-50">/mo</span>
+                    </div>
+                    <ul className="flex flex-col gap-2 flex-1">
+                      {p.features.map((f) => (
+                        <li key={f} className="font-bold text-sm flex items-center gap-2">
+                          <span className="text-[#0055ff] font-black">✓</span> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => handleUpgrade(p.key)}
+                      disabled={isCurrent || checkoutLoading === p.key}
+                      className="mt-2 bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase border-2 border-[#1a1a1a] hover:bg-[#0055ff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {checkoutLoading === p.key
+                        ? 'Redirecting...'
+                        : isCurrent
+                        ? 'Current Plan'
+                        : `Get ${p.name}`}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t-4 border-[#1a1a1a] bg-[#eee9e0] text-center">
+              <span className="font-headline font-bold text-xs uppercase opacity-60">
+                Secure payment via Stripe · Cancel anytime
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }
