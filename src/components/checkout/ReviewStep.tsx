@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { ShippingFormData, PaymentFormData } from '@/lib/validations/checkout'
+import { ShippingFormData } from '@/lib/validations/checkout'
+import { PaymentFormData } from '@/types/checkout'
 import { CartItem } from '@/types/checkout'
 import { Button } from '@/components/ui/Button'
 
