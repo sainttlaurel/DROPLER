@@ -6,8 +6,9 @@ import { Icon } from '@/components/ui/Icon'
 import { SubscriptionPlan } from '@/lib/constants'
 import Link from 'next/link'
 
-const MONTHLY_PRICE_ID = 'price_1TGZ7Z4DtPVuhqnv9UOOcjWq'
-const ANNUAL_PRICE_ID = 'price_1TGZ7Z4DtPVuhqnvAbH5WQgQ'
+const STARTER_PRICE_ID = 'price_1TGb744DtPVuhqnvvqeonWO2'
+const PRO_PRICE_ID = 'price_1TGb6d4DtPVuhqnvgghek4QU'
+const ENTERPRISE_PRICE_ID = 'price_1TGb6I4DtPVuhqnvZbqWc2P9'
 
 const PLANS: Record<string, { name: string; price: number; features: string[]; limits: { products: number; orders: number } }> = {
   FREE:       { name: 'Free',       price: 0,   features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],          limits: { products: 50,       orders: 100 } },
@@ -222,47 +223,68 @@ export default function BillingPage() {
 
       {/* Plan Toggle + Upgrade CTA */}
       {!isPro && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {/* Plan Selector */}
-          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
-            <h3 className="font-headline font-black uppercase text-2xl mb-4 border-b-4 border-[#1a1a1a] pb-2">Choose Plan</h3>
-            <div className="flex gap-4 mb-6">
-              <button
-                onClick={() => setSelectedPlan('monthly')}
-                className={`flex-1 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase transition-colors ${selectedPlan === 'monthly' ? 'bg-[#1a1a1a] text-white' : 'bg-white hover:bg-[#eee9e0]'}`}
-              >
-                Monthly<br />
-                <span className="text-sm">₱249/mo</span>
-              </button>
-              <button
-                onClick={() => setSelectedPlan('annual')}
-                className={`flex-1 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase transition-colors ${selectedPlan === 'annual' ? 'bg-[#1a1a1a] text-white' : 'bg-white hover:bg-[#eee9e0]'}`}
-              >
-                Annual 🎉<br />
-                <span className="text-sm">₱2,490/yr</span>
-              </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {/* Starter */}
+          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between">
+            <div>
+              <h3 className="font-headline font-black uppercase text-2xl mb-1">Starter</h3>
+              <div className="font-headline font-black text-4xl mb-4">$19<span className="text-lg opacity-60">/mo</span></div>
+              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
+                <li>✓ 1 store</li>
+                <li>✓ 500 products</li>
+                <li>✓ 1,000 orders/mo</li>
+                <li>✓ Email support</li>
+              </ul>
             </div>
             <button
-              onClick={() => handleUpgrade(selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : ANNUAL_PRICE_ID)}
+              onClick={() => handleUpgrade(STARTER_PRICE_ID)}
               disabled={billingLoading}
-              className="w-full py-4 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all disabled:opacity-50"
+              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
             >
-              {billingLoading ? 'Redirecting...' : `Subscribe ${selectedPlan === 'monthly' ? '₱249/mo' : '₱2,490/yr'}`}
+              {billingLoading ? 'Loading...' : 'Get Starter'}
             </button>
           </div>
 
-          {/* Upgrade CTA */}
-          <div className="bg-[#1a1a1a] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex items-center justify-between gap-6">
-            <div className="text-white">
-              <h3 className="font-headline font-black uppercase text-3xl mb-2">Need More Power?</h3>
-              <p className="font-bold opacity-70 text-sm uppercase">Unlock PRO features, unlimited processing, and priority support.</p>
+          {/* Pro */}
+          <div className="bg-[#ffcc00] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white font-headline font-black uppercase text-xs px-4 py-1">Most Popular</div>
+            <div>
+              <h3 className="font-headline font-black uppercase text-2xl mb-1">Pro</h3>
+              <div className="font-headline font-black text-4xl mb-4">$49<span className="text-lg opacity-60">/mo</span></div>
+              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
+                <li>✓ 3 stores</li>
+                <li>✓ 5,000 products</li>
+                <li>✓ Unlimited orders</li>
+                <li>✓ Priority support</li>
+              </ul>
             </div>
             <button
-              onClick={() => handleUpgrade(ANNUAL_PRICE_ID)}
+              onClick={() => handleUpgrade(PRO_PRICE_ID)}
               disabled={billingLoading}
-              className="bg-[#ffcc00] text-[#1a1a1a] px-6 py-4 border-2 border-[#ffcc00] font-headline font-black uppercase tracking-tighter hover:translate-x-1 hover:translate-y-1 transition-all shrink-0 disabled:opacity-50"
+              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
             >
-              View Plans
+              {billingLoading ? 'Loading...' : 'Get Pro'}
+            </button>
+          </div>
+
+          {/* Enterprise */}
+          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between">
+            <div>
+              <h3 className="font-headline font-black uppercase text-2xl mb-1">Enterprise</h3>
+              <div className="font-headline font-black text-4xl mb-4">$99<span className="text-lg opacity-60">/mo</span></div>
+              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
+                <li>✓ Unlimited stores</li>
+                <li>✓ Unlimited products</li>
+                <li>✓ Unlimited orders</li>
+                <li>✓ Dedicated support</li>
+              </ul>
+            </div>
+            <button
+              onClick={() => handleUpgrade(ENTERPRISE_PRICE_ID)}
+              disabled={billingLoading}
+              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
+            >
+              {billingLoading ? 'Loading...' : 'Get Enterprise'}
             </button>
           </div>
         </div>
