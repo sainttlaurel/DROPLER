@@ -21,7 +21,7 @@ export async function PATCH(
     const existingAddress = await prisma.address.findFirst({
       where: {
         id: params.id,
-        customerId: payload.customerId,
+        customerId: payload.id as string,
       },
     })
 
@@ -31,7 +31,7 @@ export async function PATCH(
 
     // Unset all other defaults
     await prisma.address.updateMany({
-      where: { customerId: payload.customerId },
+      where: { customerId: payload.id as string },
       data: { isDefault: false },
     })
 

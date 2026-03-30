@@ -19,7 +19,7 @@ export async function GET(
 
     // Get addresses for this customer
     const addresses = await prisma.address.findMany({
-      where: { customerId: payload.customerId },
+      where: { customerId: payload.id as string },
       orderBy: [
         { isDefault: 'desc' },
         { createdAt: 'desc' },
@@ -56,7 +56,7 @@ export async function POST(
     // If setting as default, unset other defaults
     if (isDefault) {
       await prisma.address.updateMany({
-        where: { customerId: payload.customerId },
+        where: { customerId: payload.id as string },
         data: { isDefault: false },
       })
     }
@@ -64,7 +64,7 @@ export async function POST(
     // Create new address
     const newAddress = await prisma.address.create({
       data: {
-        customerId: payload.customerId,
+        customerId: payload.id as string,
         name,
         address,
         city,
