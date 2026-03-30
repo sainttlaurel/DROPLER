@@ -10,10 +10,10 @@ UI/UX design was AI-assisted (layout and component structure), converted and int
 
 ## Stack
 
-- **Framework** — Next.js 14 (App Router)
+- **Framework** — Next.js 14
 - **Database** — PostgreSQL via Neon + Prisma ORM
 - **Auth** — NextAuth.js (admin) + custom JWT (storefront customers)
-- **Styling** — Tailwind CSS (brutalist/neo-brutalist design system)
+- **Styling** — 
 - **Hosting** — Vercel
 
 ---
