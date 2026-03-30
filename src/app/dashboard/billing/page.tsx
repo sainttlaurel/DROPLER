@@ -38,7 +38,7 @@ export default function BillingPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [billingLoading, setBillingLoading] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly')
+  
 
   useEffect(() => {
     fetchBillingData()
@@ -146,7 +146,7 @@ export default function BillingPage() {
           </button>
           {!isPro && (
             <button
-              onClick={() => handleUpgrade(selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : ANNUAL_PRICE_ID)}
+              onClick={() => handleUpgrade(PRO_PRICE_ID)}
               disabled={billingLoading}
               className="flex items-center gap-2 px-6 py-3 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50"
             >
@@ -180,7 +180,7 @@ export default function BillingPage() {
               </button>
             ) : (
               <button
-                onClick={() => handleUpgrade(MONTHLY_PRICE_ID)}
+                onClick={() => handleUpgrade(PRO_PRICE_ID)}
                 disabled={billingLoading}
                 className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a] disabled:opacity-50"
               >
