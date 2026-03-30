@@ -23,7 +23,7 @@ export async function PUT(
     const existingAddress = await prisma.address.findFirst({
       where: {
         id: params.id,
-        customerId: payload.customerId,
+        customerId: payload.id as string,
       },
     })
 
@@ -35,7 +35,7 @@ export async function PUT(
     if (isDefault) {
       await prisma.address.updateMany({
         where: {
-          customerId: payload.customerId,
+          customerId: payload.id as string,
           id: { not: params.id },
         },
         data: { isDefault: false },
@@ -86,7 +86,7 @@ export async function DELETE(
     const existingAddress = await prisma.address.findFirst({
       where: {
         id: params.id,
-        customerId: payload.customerId,
+        customerId: payload.id as string,
       },
     })
 

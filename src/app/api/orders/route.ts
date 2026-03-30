@@ -1,8 +1,11 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { verifyCustomerToken } from '@/lib/customer-auth'
+import { SubscriptionLimitError, enforceMonthlyOrderLimit } from '@/lib/subscription'
 
 export async function GET(req: Request) {
   try {
@@ -102,6 +105,9 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json()
+
+    await enforceMonthlyOrderLimit(session.user.storeId)
+
     const order = await prisma.order.create({
       data: {
         ...data,
@@ -111,6 +117,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
+    if (error instanceof SubscriptionLimitError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
   }
 }

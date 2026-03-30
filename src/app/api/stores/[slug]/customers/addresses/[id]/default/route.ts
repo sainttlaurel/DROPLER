@@ -12,7 +12,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+<<<<<<< HEAD
     const payload = await verifyCustomerToken(token)  // ← added await
+=======
+    const payload = await verifyCustomerToken(token)
+>>>>>>> 6a6c34fd8f5f3ed2686fd8015e88714e83e678b0
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
@@ -21,7 +25,7 @@ export async function PATCH(
     const existingAddress = await prisma.address.findFirst({
       where: {
         id: params.id,
-        customerId: payload.customerId,
+        customerId: payload.id as string,
       },
     })
 
@@ -31,7 +35,7 @@ export async function PATCH(
 
     // Unset all other defaults
     await prisma.address.updateMany({
-      where: { customerId: payload.customerId },
+      where: { customerId: payload.id as string },
       data: { isDefault: false },
     })
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,7 +9,8 @@ import * as z from 'zod'
 import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/Button'
-
+import { getSafeAuthCallbackUrl } from '@/lib/auth-redirect'
+import React, { Suspense } from 'react'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -23,8 +24,9 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
@@ -64,14 +66,7 @@ export default function RegisterPage() {
       if (signInResult?.error) {
         router.push('/auth/login')
       } else {
-        const searchParams = new URLSearchParams(window.location.search)
-        const callbackUrl = searchParams.get('callbackUrl')
-        
-        if (callbackUrl && callbackUrl.startsWith('/store/')) {
-          router.push(callbackUrl)
-        } else {
-          router.push('/dashboard')
-        }
+        router.push(getSafeAuthCallbackUrl(searchParams.toString()))
         router.refresh()
       }
     } catch (error) {
@@ -84,7 +79,9 @@ export default function RegisterPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
     try {
-      await signIn('google', { callbackUrl: '/dashboard' })
+      await signIn('google', {
+        callbackUrl: getSafeAuthCallbackUrl(searchParams.toString()),
+      })
     } finally {
       setIsGoogleLoading(false)
     }
@@ -122,6 +119,7 @@ export default function RegisterPage() {
                   </label>
                   <input
                     {...register('name')}
+                    autoComplete="name"
                     className="w-full px-0 py-3 bg-transparent border-t-0 border-x-0 border-b-4 border-primary focus:ring-0 focus:border-tertiary font-headline font-bold text-lg placeholder:text-primary/20 placeholder:uppercase transition-colors"
                     id="name"
                     type="text"
@@ -141,6 +139,7 @@ export default function RegisterPage() {
                   </label>
                   <input
                     {...register('email')}
+                    autoComplete="email"
                     className="w-full px-0 py-3 bg-transparent border-t-0 border-x-0 border-b-4 border-primary focus:ring-0 focus:border-tertiary font-headline font-bold text-lg placeholder:text-primary/20 placeholder:uppercase transition-colors"
                     id="email"
                     type="email"
@@ -160,6 +159,7 @@ export default function RegisterPage() {
                   </label>
                   <input
                     {...register('password')}
+                    autoComplete="new-password"
                     className="w-full px-0 py-3 bg-transparent border-t-0 border-x-0 border-b-4 border-primary focus:ring-0 focus:border-tertiary font-headline font-bold text-lg placeholder:text-primary/20 transition-colors"
                     id="password"
                     type="password"
@@ -183,6 +183,7 @@ export default function RegisterPage() {
                     </span>
                     <input
                       {...register('storeName')}
+                      autoComplete="organization"
                       className="w-full px-0 py-3 bg-transparent border-t-0 border-x-0 border-b-4 border-primary focus:ring-0 focus:border-tertiary font-headline font-bold text-lg placeholder:text-primary/20 transition-colors"
                       id="storeName"
                       type="text"
@@ -209,7 +210,7 @@ export default function RegisterPage() {
                   <div className="ml-3 text-sm">
                     <label className="font-headline font-bold uppercase tracking-tight text-primary" htmlFor="terms">
                       I agree to the{' '}
-                      <Link href="/terms" className="text-tertiary underline decoration-2 underline-offset-4 hover:bg-tertiary hover:text-white">
+                      <Link href="/dashboard/legal" className="text-tertiary underline decoration-2 underline-offset-4 hover:bg-tertiary hover:text-white">
                         Terms of Service
                       </Link>
                     </label>
@@ -272,3 +273,21 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+export default function RegisterPage() {
+  const LazyRegisterContent = React.lazy(() => Promise.resolve({ default: RegisterContent }))
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-bold uppercase tracking-wide text-primary">Loading...</p>
+        </div>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
+  )
+}
+
