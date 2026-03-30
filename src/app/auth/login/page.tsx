@@ -1,25 +1,24 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/Button'
-import { getSafeAuthCallbackUrl } from '@/lib/auth-redirect'
-
+import React, { useState, Suspense, lazy } from "react"
+import { signIn } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/Button"
+import { getSafeAuthCallbackUrl } from "@/lib/auth-redirect"
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -37,21 +36,21 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
         redirect: false,
       })
 
       if (result?.error) {
-        toast.error('Invalid email or password')
+        toast.error("Invalid email or password")
       } else {
-        toast.success('Welcome back!')
+        toast.success("Welcome back!")
         router.push(getSafeAuthCallbackUrl(searchParams.toString()))
         router.refresh()
       }
     } catch (error) {
-      toast.error('Something went wrong')
+      toast.error("Something went wrong")
     } finally {
       setIsLoading(false)
     }
@@ -60,7 +59,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
     try {
-      await signIn('google', {
+      await signIn("google", {
         callbackUrl: getSafeAuthCallbackUrl(searchParams.toString()),
       })
     } finally {
@@ -92,7 +91,7 @@ export default function LoginPage() {
                   Email Address
                 </label>
                 <input
-                  {...register('email')}
+                  {...register("email")}
                   autoComplete="email"
                   className="w-full bg-transparent border-b-4 border-primary focus:border-primary-container focus:ring-0 px-0 py-3 font-body text-lg placeholder:text-on-surface-variant/40 placeholder:uppercase"
                   id="email"
@@ -116,7 +115,7 @@ export default function LoginPage() {
                   </Link>
                 </div>
                 <input
-                  {...register('password')}
+                  {...register("password")}
                   autoComplete="current-password"
                   className="w-full bg-transparent border-b-4 border-primary focus:border-primary-container focus:ring-0 px-0 py-3 font-body text-lg placeholder:text-on-surface-variant/40"
                   id="password"
@@ -137,7 +136,7 @@ export default function LoginPage() {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Logging in...' : 'Login'}
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
 
                 <button
@@ -152,7 +151,7 @@ export default function LoginPage() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
-                  {isGoogleLoading ? 'Connecting...' : 'Login with Google'}
+                  {isGoogleLoading ? "Connecting..." : "Login with Google"}
                 </button>
               </div>
             </form>
@@ -188,5 +187,20 @@ export default function LoginPage() {
         © {new Date().getFullYear()} Dropler
       </footer>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-bold uppercase tracking-wide text-primary">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

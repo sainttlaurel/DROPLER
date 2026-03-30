@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/Button'
 import { getSafeAuthCallbackUrl } from '@/lib/auth-redirect'
-
+import React, { Suspense } from 'react'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -24,7 +24,7 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -273,3 +273,21 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+export default function RegisterPage() {
+  const LazyRegisterContent = React.lazy(() => Promise.resolve({ default: RegisterContent }))
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-bold uppercase tracking-wide text-primary">Loading...</p>
+        </div>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
+  )
+}
+
