@@ -214,7 +214,7 @@ export default function StorefrontHomePage() {
             </Link>
             {theme?.heroCta2Text && (
               <Link href={`/stores/${slug}/products`}>
-                <Button variant="outline" size="lg" className="text-2xl px-10 py-5">
+                <Button variant="ghost" size="lg" className="text-2xl px-10 py-5 border border-current">
                   {theme.heroCta2Text}
                 </Button>
               </Link>
