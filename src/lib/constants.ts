@@ -57,19 +57,84 @@ export const TIMEZONES = [
 ]
 
 export const SUBSCRIPTION_PLANS = {
-  FREE: 'FREE',
-  STARTER: 'STARTER',
-  GROWTH: 'GROWTH',
+  FREE:       'FREE',
+  STARTER:    'STARTER',
+  PRO:        'PRO',
   ENTERPRISE: 'ENTERPRISE',
 } as const
 
 export type SubscriptionPlan = typeof SUBSCRIPTION_PLANS[keyof typeof SUBSCRIPTION_PLANS]
 
-// Valid subscription plan values
 export const SUBSCRIPTION_PLAN_VALUES = Object.values(SUBSCRIPTION_PLANS)
 
-// Check if a value is a valid subscription plan
 export function isValidSubscriptionPlan(value: string): value is SubscriptionPlan {
   return SUBSCRIPTION_PLAN_VALUES.includes(value as SubscriptionPlan)
 }
 
+// Single source of truth for all plan details — use this everywhere
+export const PLAN_DETAILS: Record<SubscriptionPlan, {
+  name: string
+  price: number
+  annualPrice: number
+  popular: boolean
+  features: string[]
+  limits: { products: number; orders: number; stores: number }
+}> = {
+  FREE: {
+    name: 'Free',
+    price: 0,
+    annualPrice: 0,
+    popular: false,
+    features: [
+      '1 store',
+      'Up to 50 products',
+      'Up to 100 orders/mo',
+      'Basic analytics',
+      'Order management',
+    ],
+    limits: { products: 50, orders: 100, stores: 1 },
+  },
+  STARTER: {
+    name: 'Starter',
+    price: 19,
+    annualPrice: 190,
+    popular: false,
+    features: [
+      '1 store',
+      'Up to 500 products',
+      'Up to 1,000 orders/mo',
+      'Basic analytics',
+      'Email support',
+    ],
+    limits: { products: 500, orders: 1000, stores: 1 },
+  },
+  PRO: {
+    name: 'Pro',
+    price: 49,
+    annualPrice: 490,
+    popular: true,
+    features: [
+      'Up to 3 stores',
+      'Up to 5,000 products',
+      'Unlimited orders',
+      'Advanced analytics',
+      'Priority support',
+    ],
+    limits: { products: 5000, orders: Infinity, stores: 3 },
+  },
+  ENTERPRISE: {
+    name: 'Enterprise',
+    price: 99,
+    annualPrice: 990,
+    popular: false,
+    features: [
+      'Unlimited stores',
+      'Unlimited products',
+      'Unlimited orders',
+      'Advanced analytics',
+      'Dedicated support',
+      'White-label storefront',
+    ],
+    limits: { products: Infinity, orders: Infinity, stores: Infinity },
+  },
+}

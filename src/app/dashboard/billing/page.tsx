@@ -6,11 +6,15 @@ import { Icon } from '@/components/ui/Icon'
 import { SubscriptionPlan } from '@/lib/constants'
 import Link from 'next/link'
 
+const MONTHLY_PRICE_ID = 'price_1TGZ7Z4DtPVuhqnv9UOOcjWq'
+const ANNUAL_PRICE_ID = 'price_1TGZ7Z4DtPVuhqnvAbH5WQgQ'
+
 const PLANS: Record<string, { name: string; price: number; features: string[]; limits: { products: number; orders: number } }> = {
-  FREE:       { name: 'Free',       price: 0,  features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],          limits: { products: 50,       orders: 100 } },
-  STARTER:    { name: 'Starter',    price: 19, features: ['Up to 500 products', 'Up to 1,000 orders/mo', 'Priority support'], limits: { products: 500,      orders: 1000 } },
-  GROWTH:     { name: 'Growth',     price: 49, features: ['Up to 5,000 products', 'Unlimited orders', 'Analytics'],          limits: { products: 5000,     orders: Infinity } },
-  ENTERPRISE: { name: 'Enterprise', price: 99, features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'],    limits: { products: Infinity, orders: Infinity } },
+  FREE:       { name: 'Free',       price: 0,   features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],          limits: { products: 50,       orders: 100 } },
+  STARTER:    { name: 'Starter',    price: 19,  features: ['Up to 500 products', 'Up to 1,000 orders/mo', 'Priority support'], limits: { products: 500,      orders: 1000 } },
+  GROWTH:     { name: 'Growth',     price: 49,  features: ['Up to 5,000 products', 'Unlimited orders', 'Analytics'],          limits: { products: 5000,     orders: Infinity } },
+  ENTERPRISE: { name: 'Enterprise', price: 99,  features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'],    limits: { products: Infinity, orders: Infinity } },
+  PRO:        { name: 'Pro',        price: 249, features: ['Unlimited products', 'Unlimited orders', 'Priority support'],     limits: { products: Infinity, orders: Infinity } },
 }
 
 interface BillingData {
@@ -19,17 +23,21 @@ interface BillingData {
   orderCount: number
   supplierCount: number
   hasStripeCustomer: boolean
+  subscriptionStatus?: string
+  stripeCurrentPeriodEnd?: string
 }
 
 const mockBillingHistory = [
-  { id: '#INV-2024-001', date: 'Oct 12, 2024', amount: 49, status: 'Paid' },
-  { id: '#INV-2024-002', date: 'Sep 12, 2024', amount: 49, status: 'Paid' },
-  { id: '#INV-2024-003', date: 'Aug 12, 2024', amount: 49, status: 'Paid' },
+  { id: '#INV-2024-001', date: 'Oct 12, 2024', amount: 249, status: 'Paid' },
+  { id: '#INV-2024-002', date: 'Sep 12, 2024', amount: 249, status: 'Paid' },
+  { id: '#INV-2024-003', date: 'Aug 12, 2024', amount: 249, status: 'Paid' },
 ]
 
 export default function BillingPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly')
 
   useEffect(() => {
     fetchBillingData()
@@ -50,16 +58,46 @@ export default function BillingPage() {
       const ordersList = Array.isArray(orders) ? orders : (orders.orders ?? [])
 
       setBillingData({
-        plan: (settings.store?.plan || 'FREE') as SubscriptionPlan,
+        plan: (settings.store?.subscription?.plan || 'FREE') as SubscriptionPlan,
         productCount: productsList.length,
         orderCount: ordersList.length,
         supplierCount: 0,
-        hasStripeCustomer: false,
+        hasStripeCustomer: !!settings.store?.subscription?.stripeCustomerId,
+        subscriptionStatus: settings.store?.subscription?.status,
+        stripeCurrentPeriodEnd: settings.store?.subscription?.stripeCurrentPeriodEnd,
       })
     } catch {
       setBillingData({ plan: 'FREE' as SubscriptionPlan, productCount: 0, orderCount: 0, supplierCount: 0, hasStripeCustomer: false })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleUpgrade = async (priceId: string) => {
+    setBillingLoading(true)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const handleManageBilling = async () => {
+    setBillingLoading(true)
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {
+    } finally {
+      setBillingLoading(false)
     }
   }
 
@@ -76,12 +114,17 @@ export default function BillingPage() {
     )
   }
 
-  const currentPlan = billingData?.plan || 'FREE'
-  const planData = PLANS[currentPlan]
+  // ✅ Null guard — tells TypeScript billingData is guaranteed non-null below
+  if (!billingData) return null
+
+  const currentPlan = billingData.plan || 'FREE'
+  const isPro = billingData.subscriptionStatus === 'ACTIVE' && (currentPlan === ('PRO' as SubscriptionPlan) || currentPlan === ('ENTERPRISE' as SubscriptionPlan))
+  const planData = PLANS[currentPlan] || PLANS.FREE
   const limits = planData.limits
 
-  const productPct = limits.products === Infinity ? 10 : Math.min(100, Math.round((billingData!.productCount / limits.products) * 100))
-  const orderPct = limits.orders === Infinity ? 10 : Math.min(100, Math.round((billingData!.orderCount / limits.orders) * 100))
+  // ✅ Safe access — no more billingData! assertions needed
+  const productPct = limits.products === Infinity ? 10 : Math.min(100, Math.round((billingData.productCount / limits.products) * 100))
+  const orderPct = limits.orders === Infinity ? 10 : Math.min(100, Math.round((billingData.orderCount / limits.orders) * 100))
 
   return (
     <DashboardLayout>
@@ -100,10 +143,16 @@ export default function BillingPage() {
             <Icon name="download" size="sm" />
             Export
           </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none">
-            <Icon name="upgrade" size="sm" />
-            Upgrade Plan
-          </button>
+          {!isPro && (
+            <button
+              onClick={() => handleUpgrade(selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : ANNUAL_PRICE_ID)}
+              disabled={billingLoading}
+              className="flex items-center gap-2 px-6 py-3 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50"
+            >
+              <Icon name="upgrade" size="sm" />
+              {billingLoading ? 'Loading...' : 'Upgrade Plan'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -118,11 +167,25 @@ export default function BillingPage() {
           </div>
           <div>
             <div className="font-headline font-black text-4xl tracking-tighter mb-4">
-              ${planData.price}.00<span className="text-lg opacity-60">/mo</span>
+              ₱{planData.price}.00<span className="text-lg opacity-60">/mo</span>
             </div>
-            <button className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a]">
-              Manage Subscription
-            </button>
+            {isPro ? (
+              <button
+                onClick={handleManageBilling}
+                disabled={billingLoading}
+                className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a] disabled:opacity-50"
+              >
+                {billingLoading ? 'Loading...' : 'Manage Subscription'}
+              </button>
+            ) : (
+              <button
+                onClick={() => handleUpgrade(MONTHLY_PRICE_ID)}
+                disabled={billingLoading}
+                className="w-full bg-[#1a1a1a] text-white py-3 font-headline font-black uppercase tracking-tighter text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a] disabled:opacity-50"
+              >
+                {billingLoading ? 'Loading...' : 'Upgrade Now'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -134,7 +197,7 @@ export default function BillingPage() {
           </div>
           <div className="font-headline font-black text-xs uppercase tracking-widest mb-1">Products Imported</div>
           <div className="font-headline font-black text-4xl tracking-tighter">
-            {billingData!.productCount.toLocaleString()} / {limits.products === Infinity ? '∞' : limits.products.toLocaleString()}
+            {billingData.productCount.toLocaleString()} / {limits.products === Infinity ? '∞' : limits.products.toLocaleString()}
           </div>
           <div className="mt-4 h-4 bg-[#e8e3da] border-2 border-[#1a1a1a] w-full overflow-hidden">
             <div className="h-full bg-[#0055ff] border-r-2 border-[#1a1a1a]" style={{ width: `${productPct}%` }} />
@@ -149,7 +212,7 @@ export default function BillingPage() {
           </div>
           <div className="font-headline font-black text-xs uppercase tracking-widest mb-1">Orders Processed</div>
           <div className="font-headline font-black text-4xl tracking-tighter">
-            {billingData!.orderCount.toLocaleString()} / {limits.orders === Infinity ? '∞' : limits.orders.toLocaleString()}
+            {billingData.orderCount.toLocaleString()} / {limits.orders === Infinity ? '∞' : limits.orders.toLocaleString()}
           </div>
           <div className="mt-4 h-4 bg-[#e8e3da] border-2 border-[#1a1a1a] w-full overflow-hidden">
             <div className="h-full bg-[#e63b2e] border-r-2 border-[#1a1a1a]" style={{ width: `${orderPct}%` }} />
@@ -157,39 +220,53 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Payment Method + Upgrade CTA */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {/* Payment Method */}
-        <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 opacity-5">
-            <Icon name="credit_card" className="text-[140px]" />
-          </div>
-          <h3 className="font-headline font-black uppercase text-2xl mb-6 border-b-4 border-[#1a1a1a] pb-2 inline-block">Payment Method</h3>
-          <div className="flex items-center gap-6 mb-6">
-            <div className="w-16 h-10 bg-[#1a1a1a] flex items-center justify-center shrink-0">
-              <span className="text-white font-black italic text-xl">VISA</span>
+      {/* Plan Toggle + Upgrade CTA */}
+      {!isPro && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Plan Selector */}
+          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
+            <h3 className="font-headline font-black uppercase text-2xl mb-4 border-b-4 border-[#1a1a1a] pb-2">Choose Plan</h3>
+            <div className="flex gap-4 mb-6">
+              <button
+                onClick={() => setSelectedPlan('monthly')}
+                className={`flex-1 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase transition-colors ${selectedPlan === 'monthly' ? 'bg-[#1a1a1a] text-white' : 'bg-white hover:bg-[#eee9e0]'}`}
+              >
+                Monthly<br />
+                <span className="text-sm">₱249/mo</span>
+              </button>
+              <button
+                onClick={() => setSelectedPlan('annual')}
+                className={`flex-1 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase transition-colors ${selectedPlan === 'annual' ? 'bg-[#1a1a1a] text-white' : 'bg-white hover:bg-[#eee9e0]'}`}
+              >
+                Annual 🎉<br />
+                <span className="text-sm">₱2,490/yr</span>
+              </button>
             </div>
-            <div>
-              <p className="font-headline font-bold text-xl uppercase tracking-tighter">Visa Ending in 1234</p>
-              <p className="font-body text-xs opacity-60 uppercase">Expires 12/26</p>
-            </div>
+            <button
+              onClick={() => handleUpgrade(selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : ANNUAL_PRICE_ID)}
+              disabled={billingLoading}
+              className="w-full py-4 bg-[#ffcc00] border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all disabled:opacity-50"
+            >
+              {billingLoading ? 'Redirecting...' : `Subscribe ${selectedPlan === 'monthly' ? '₱249/mo' : '₱2,490/yr'}`}
+            </button>
           </div>
-          <button className="font-headline font-bold text-[#0055ff] uppercase hover:underline flex items-center gap-2">
-            Update Card <Icon name="arrow_forward" size="sm" />
-          </button>
-        </div>
 
-        {/* Upgrade CTA */}
-        <div className="bg-[#1a1a1a] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex items-center justify-between gap-6">
-          <div className="text-white">
-            <h3 className="font-headline font-black uppercase text-3xl mb-2">Need More Power?</h3>
-            <p className="font-bold opacity-70 text-sm uppercase">Unlock Enterprise features, unlimited processing, and 24/7 dedicated support.</p>
+          {/* Upgrade CTA */}
+          <div className="bg-[#1a1a1a] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex items-center justify-between gap-6">
+            <div className="text-white">
+              <h3 className="font-headline font-black uppercase text-3xl mb-2">Need More Power?</h3>
+              <p className="font-bold opacity-70 text-sm uppercase">Unlock PRO features, unlimited processing, and priority support.</p>
+            </div>
+            <button
+              onClick={() => handleUpgrade(ANNUAL_PRICE_ID)}
+              disabled={billingLoading}
+              className="bg-[#ffcc00] text-[#1a1a1a] px-6 py-4 border-2 border-[#ffcc00] font-headline font-black uppercase tracking-tighter hover:translate-x-1 hover:translate-y-1 transition-all shrink-0 disabled:opacity-50"
+            >
+              View Plans
+            </button>
           </div>
-          <button className="bg-[#ffcc00] text-[#1a1a1a] px-6 py-4 border-2 border-[#ffcc00] shadow-[4px_4px_0px_0px_rgba(255,204,0,0.4)] font-headline font-black uppercase tracking-tighter hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all shrink-0">
-            View Plans
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Billing History */}
       <div className="border-4 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] overflow-hidden mb-10">
@@ -212,7 +289,7 @@ export default function BillingPage() {
                 <tr key={invoice.id} className="hover:bg-[#f5f0e8] transition-colors">
                   <td className="p-4 font-headline font-black">{invoice.id}</td>
                   <td className="p-4 font-bold uppercase text-sm">{invoice.date}</td>
-                  <td className="p-4 font-headline font-black">${invoice.amount}.00</td>
+                  <td className="p-4 font-headline font-black">₱{invoice.amount}.00</td>
                   <td className="p-4">
                     <span className="bg-[#1a1a1a] text-white px-3 py-1 text-[10px] font-headline font-black uppercase tracking-widest border-2 border-[#1a1a1a]">
                       {invoice.status}
