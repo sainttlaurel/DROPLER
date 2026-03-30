@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { SubscriptionLimitError, enforceMonthlyOrderLimit } from '@/lib/subscription'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    await enforceMonthlyOrderLimit(storeId)
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
@@ -126,6 +129,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(order)
   } catch (error) {
+    if (error instanceof SubscriptionLimitError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
+
     console.error('Order creation error:', error)
     return NextResponse.json(
       { error: 'Failed to create order' },

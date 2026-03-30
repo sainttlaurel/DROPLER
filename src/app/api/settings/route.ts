@@ -14,7 +14,10 @@ export async function GET() {
 
     const [store, user] = await Promise.all([
       session.user.storeId
-        ? prisma.store.findUnique({ where: { id: session.user.storeId } })
+        ? prisma.store.findUnique({
+            where: { id: session.user.storeId },
+            include: { subscription: true },
+          })
         : null,
       prisma.user.findUnique({ where: { id: session.user.id } }),
     ])

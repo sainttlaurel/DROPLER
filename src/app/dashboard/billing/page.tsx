@@ -3,26 +3,23 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Icon } from '@/components/ui/Icon'
-import { SubscriptionPlan } from '@/lib/constants'
+import { PLAN_DETAILS, SubscriptionPlan, SUBSCRIPTION_PLANS } from '@/lib/constants'
 import Link from 'next/link'
 
 const STARTER_PRICE_ID = 'price_1TGb744DtPVuhqnvvqeonWO2'
 const PRO_PRICE_ID = 'price_1TGb6d4DtPVuhqnvgghek4QU'
 const ENTERPRISE_PRICE_ID = 'price_1TGb6I4DtPVuhqnvZbqWc2P9'
 
-const PLANS: Record<string, { name: string; price: number; features: string[]; limits: { products: number; orders: number } }> = {
-  FREE:       { name: 'Free',       price: 0,   features: ['Up to 50 products', 'Up to 100 orders/mo', '1 store'],          limits: { products: 50,       orders: 100 } },
-  STARTER:    { name: 'Starter',    price: 19,  features: ['Up to 500 products', 'Up to 1,000 orders/mo', 'Priority support'], limits: { products: 500,      orders: 1000 } },
-  GROWTH:     { name: 'Growth',     price: 49,  features: ['Up to 5,000 products', 'Unlimited orders', 'Analytics'],          limits: { products: 5000,     orders: Infinity } },
-  ENTERPRISE: { name: 'Enterprise', price: 99,  features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'],    limits: { products: Infinity, orders: Infinity } },
-  PRO:        { name: 'Pro',        price: 249, features: ['Unlimited products', 'Unlimited orders', 'Priority support'],     limits: { products: Infinity, orders: Infinity } },
+const PRICE_IDS: Partial<Record<SubscriptionPlan, string>> = {
+  STARTER: STARTER_PRICE_ID,
+  PRO: PRO_PRICE_ID,
+  ENTERPRISE: ENTERPRISE_PRICE_ID,
 }
 
 interface BillingData {
   plan: SubscriptionPlan
   productCount: number
   orderCount: number
-  supplierCount: number
   hasStripeCustomer: boolean
   subscriptionStatus?: string
   stripeCurrentPeriodEnd?: string
@@ -34,11 +31,16 @@ const mockBillingHistory = [
   { id: '#INV-2024-003', date: 'Aug 12, 2024', amount: 249, status: 'Paid' },
 ]
 
+const visiblePlans: SubscriptionPlan[] = [
+  SUBSCRIPTION_PLANS.STARTER,
+  SUBSCRIPTION_PLANS.PRO,
+  SUBSCRIPTION_PLANS.ENTERPRISE,
+]
+
 export default function BillingPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [billingLoading, setBillingLoading] = useState(false)
-  
 
   useEffect(() => {
     fetchBillingData()
@@ -49,7 +51,7 @@ export default function BillingPage() {
       const [settingsRes, productsRes, ordersRes] = await Promise.all([
         fetch('/api/settings'),
         fetch('/api/products'),
-        fetch('/api/orders'),
+        fetch('/api/orders?limit=1000'),
       ])
       const settings = await settingsRes.json()
       const products = await productsRes.json()
@@ -59,16 +61,20 @@ export default function BillingPage() {
       const ordersList = Array.isArray(orders) ? orders : (orders.orders ?? [])
 
       setBillingData({
-        plan: (settings.store?.subscription?.plan || 'FREE') as SubscriptionPlan,
+        plan: (settings.store?.subscription?.plan || SUBSCRIPTION_PLANS.FREE) as SubscriptionPlan,
         productCount: productsList.length,
         orderCount: ordersList.length,
-        supplierCount: 0,
         hasStripeCustomer: !!settings.store?.subscription?.stripeCustomerId,
         subscriptionStatus: settings.store?.subscription?.status,
         stripeCurrentPeriodEnd: settings.store?.subscription?.stripeCurrentPeriodEnd,
       })
     } catch {
-      setBillingData({ plan: 'FREE' as SubscriptionPlan, productCount: 0, orderCount: 0, supplierCount: 0, hasStripeCustomer: false })
+      setBillingData({
+        plan: SUBSCRIPTION_PLANS.FREE,
+        productCount: 0,
+        orderCount: 0,
+        hasStripeCustomer: false,
+      })
     } finally {
       setLoading(false)
     }
@@ -115,21 +121,20 @@ export default function BillingPage() {
     )
   }
 
-  // ✅ Null guard — tells TypeScript billingData is guaranteed non-null below
   if (!billingData) return null
 
-  const currentPlan = billingData.plan || 'FREE'
-  const isPro = billingData.subscriptionStatus === 'ACTIVE' && currentPlan !== 'FREE'
-  const planData = PLANS[currentPlan] || PLANS.FREE
-  const limits = planData.limits
-
-  // ✅ Safe access — no more billingData! assertions needed
-  const productPct = limits.products === Infinity ? 10 : Math.min(100, Math.round((billingData.productCount / limits.products) * 100))
-  const orderPct = limits.orders === Infinity ? 10 : Math.min(100, Math.round((billingData.orderCount / limits.orders) * 100))
+  const currentPlan = billingData.plan || SUBSCRIPTION_PLANS.FREE
+  const currentPlanDetails = PLAN_DETAILS[currentPlan] || PLAN_DETAILS.FREE
+  const hasPaidPlan = currentPlan !== SUBSCRIPTION_PLANS.FREE
+  const productsLimit = currentPlanDetails.limits.products
+  const ordersLimit = currentPlanDetails.limits.orders
+  const productPct =
+    productsLimit === Infinity ? 10 : Math.min(100, Math.round((billingData.productCount / productsLimit) * 100))
+  const orderPct =
+    ordersLimit === Infinity ? 10 : Math.min(100, Math.round((billingData.orderCount / ordersLimit) * 100))
 
   return (
     <DashboardLayout>
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6 border-b-8 border-[#1a1a1a] pb-8">
         <div>
           <h1 className="text-7xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-2 font-headline">
@@ -144,7 +149,7 @@ export default function BillingPage() {
             <Icon name="download" size="sm" />
             Export
           </button>
-          {!isPro && (
+          {!hasPaidPlan && (
             <button
               onClick={() => handleUpgrade(PRO_PRICE_ID)}
               disabled={billingLoading}
@@ -157,20 +162,23 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Metric Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-        {/* Current Plan - Yellow */}
         <div className="md:col-span-4 bg-[#ffcc00] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between min-h-[220px]">
           <div>
             <div className="font-headline font-black text-xs uppercase tracking-widest mb-2">Active Plan</div>
-            <div className="font-headline font-black text-5xl tracking-tighter leading-none">{planData.name}</div>
-            <div className="mt-2 font-bold text-sm uppercase opacity-70">{planData.features[0]}</div>
+            <div className="font-headline font-black text-5xl tracking-tighter leading-none">{currentPlanDetails.name}</div>
+            <div className="mt-2 font-bold text-sm uppercase opacity-70">{currentPlanDetails.features[0]}</div>
+            {billingData.subscriptionStatus && (
+              <div className="mt-4 inline-flex bg-[#1a1a1a] text-white px-3 py-1 text-[10px] font-headline font-black uppercase tracking-widest border-2 border-[#1a1a1a]">
+                {billingData.subscriptionStatus}
+              </div>
+            )}
           </div>
           <div>
             <div className="font-headline font-black text-4xl tracking-tighter mb-4">
-              ₱{planData.price}.00<span className="text-lg opacity-60">/mo</span>
+              ₱{currentPlanDetails.price}.00<span className="text-lg opacity-60">/mo</span>
             </div>
-            {isPro ? (
+            {hasPaidPlan ? (
               <button
                 onClick={handleManageBilling}
                 disabled={billingLoading}
@@ -190,7 +198,6 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Products Usage */}
         <div className="md:col-span-4 p-6 border-4 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
           <div className="flex justify-between items-start mb-4">
             <Icon name="inventory_2" className="text-3xl" />
@@ -198,22 +205,21 @@ export default function BillingPage() {
           </div>
           <div className="font-headline font-black text-xs uppercase tracking-widest mb-1">Products Imported</div>
           <div className="font-headline font-black text-4xl tracking-tighter">
-            {billingData.productCount.toLocaleString()} / {limits.products === Infinity ? '∞' : limits.products.toLocaleString()}
+            {billingData.productCount.toLocaleString()} / {productsLimit === Infinity ? '∞' : productsLimit.toLocaleString()}
           </div>
           <div className="mt-4 h-4 bg-[#e8e3da] border-2 border-[#1a1a1a] w-full overflow-hidden">
             <div className="h-full bg-[#0055ff] border-r-2 border-[#1a1a1a]" style={{ width: `${productPct}%` }} />
           </div>
         </div>
 
-        {/* Orders Usage */}
         <div className="md:col-span-4 p-6 border-4 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
           <div className="flex justify-between items-start mb-4">
             <Icon name="rocket_launch" className="text-3xl" />
             <span className="font-headline font-bold text-xs bg-[#eee9e0] px-2 py-1 border-2 border-[#1a1a1a]">{orderPct}% USED</span>
           </div>
-          <div className="font-headline font-black text-xs uppercase tracking-widest mb-1">Orders Processed</div>
+          <div className="font-headline font-black text-xs uppercase tracking-widest mb-1">Orders This Month</div>
           <div className="font-headline font-black text-4xl tracking-tighter">
-            {billingData.orderCount.toLocaleString()} / {limits.orders === Infinity ? '∞' : limits.orders.toLocaleString()}
+            {billingData.orderCount.toLocaleString()} / {ordersLimit === Infinity ? '∞' : ordersLimit.toLocaleString()}
           </div>
           <div className="mt-4 h-4 bg-[#e8e3da] border-2 border-[#1a1a1a] w-full overflow-hidden">
             <div className="h-full bg-[#e63b2e] border-r-2 border-[#1a1a1a]" style={{ width: `${orderPct}%` }} />
@@ -221,76 +227,49 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Plan Toggle + Upgrade CTA */}
-      {!isPro && (
+      {!hasPaidPlan && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* Starter */}
-          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between">
-            <div>
-              <h3 className="font-headline font-black uppercase text-2xl mb-1">Starter</h3>
-              <div className="font-headline font-black text-4xl mb-4">$19<span className="text-lg opacity-60">/mo</span></div>
-              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
-                <li>✓ 1 store</li>
-                <li>✓ 500 products</li>
-                <li>✓ 1,000 orders/mo</li>
-                <li>✓ Email support</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleUpgrade(STARTER_PRICE_ID)}
-              disabled={billingLoading}
-              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
-            >
-              {billingLoading ? 'Loading...' : 'Get Starter'}
-            </button>
-          </div>
+          {visiblePlans.map((planKey) => {
+            const plan = PLAN_DETAILS[planKey]
+            const priceId = PRICE_IDS[planKey]
+            const ctaLabel = `Get ${plan.name}`
 
-          {/* Pro */}
-          <div className="bg-[#ffcc00] border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between relative">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white font-headline font-black uppercase text-xs px-4 py-1">Most Popular</div>
-            <div>
-              <h3 className="font-headline font-black uppercase text-2xl mb-1">Pro</h3>
-              <div className="font-headline font-black text-4xl mb-4">$49<span className="text-lg opacity-60">/mo</span></div>
-              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
-                <li>✓ 3 stores</li>
-                <li>✓ 5,000 products</li>
-                <li>✓ Unlimited orders</li>
-                <li>✓ Priority support</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleUpgrade(PRO_PRICE_ID)}
-              disabled={billingLoading}
-              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
-            >
-              {billingLoading ? 'Loading...' : 'Get Pro'}
-            </button>
-          </div>
-
-          {/* Enterprise */}
-          <div className="bg-white border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between">
-            <div>
-              <h3 className="font-headline font-black uppercase text-2xl mb-1">Enterprise</h3>
-              <div className="font-headline font-black text-4xl mb-4">$99<span className="text-lg opacity-60">/mo</span></div>
-              <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
-                <li>✓ Unlimited stores</li>
-                <li>✓ Unlimited products</li>
-                <li>✓ Unlimited orders</li>
-                <li>✓ Dedicated support</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleUpgrade(ENTERPRISE_PRICE_ID)}
-              disabled={billingLoading}
-              className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
-            >
-              {billingLoading ? 'Loading...' : 'Get Enterprise'}
-            </button>
-          </div>
+            return (
+              <div
+                key={planKey}
+                className={`border-4 border-[#1a1a1a] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between relative ${
+                  plan.popular ? 'bg-[#ffcc00]' : 'bg-white'
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white font-headline font-black uppercase text-xs px-4 py-1">
+                    Most Popular
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-headline font-black uppercase text-2xl mb-1">{plan.name}</h3>
+                  <div className="font-headline font-black text-4xl mb-4">
+                    ${plan.price}<span className="text-lg opacity-60">/mo</span>
+                  </div>
+                  <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
+                    {plan.features.slice(0, 4).map((feature) => (
+                      <li key={feature}>✓ {feature}</li>
+                    ))}
+                  </ul>
+                </div>
+                <button
+                  onClick={() => priceId && handleUpgrade(priceId)}
+                  disabled={billingLoading || !priceId}
+                  className="w-full py-3 bg-[#1a1a1a] text-white border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#0055ff] transition-colors disabled:opacity-50"
+                >
+                  {billingLoading ? 'Loading...' : ctaLabel}
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* Billing History */}
       <div className="border-4 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] overflow-hidden mb-10">
         <div className="p-6 border-b-4 border-[#1a1a1a] flex justify-between items-center bg-[#eee9e0]">
           <h3 className="text-2xl font-black uppercase tracking-tight font-headline">Billing History</h3>
@@ -334,7 +313,15 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Bottom CTAs */}
+      <div className="mb-10 border-4 border-[#1a1a1a] bg-[#f5f0e8] p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
+        <h3 className="text-2xl font-black uppercase tracking-tight font-headline mb-3">Plan Notes</h3>
+        <ul className="space-y-2 text-sm font-bold uppercase">
+          <li>✓ Product and monthly order limits are now enforced by your active subscription.</li>
+          <li>✓ Pricing cards and billing limits now use the shared subscription definitions.</li>
+          <li>⚠ Multi-store limits require a future schema update because the current system supports one store per user.</li>
+        </ul>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
         <Link href="/dashboard/support">
           <div className="bg-[#1a1a1a] p-8 flex items-center justify-between group cursor-pointer hover:bg-[#0055ff] transition-colors border-4 border-[#1a1a1a] shadow-[6px_6px_0px_0px_rgba(26,26,26,1)]">
