@@ -57,7 +57,7 @@ export function PaymentForm({ onSubmit, onBack, defaultValues }: PaymentFormProp
   }
 
   const handleFormSubmit = (data: PaymentFormData) => {
-    onSubmit({ ...data, method })
+    onSubmit({ ...data, method } as PaymentFormData)
   }
 
   const cardErrors = errors as any
