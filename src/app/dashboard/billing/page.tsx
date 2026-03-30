@@ -119,7 +119,7 @@ export default function BillingPage() {
   if (!billingData) return null
 
   const currentPlan = billingData.plan || 'FREE'
-  const isPro = billingData.subscriptionStatus === 'ACTIVE' && (currentPlan === ('PRO' as SubscriptionPlan) || currentPlan === ('ENTERPRISE' as SubscriptionPlan))
+  const isPro = billingData.subscriptionStatus === 'ACTIVE' && currentPlan !== 'FREE'
   const planData = PLANS[currentPlan] || PLANS.FREE
   const limits = planData.limits
 
