@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Icon } from '@/components/ui/Icon'
 import { PLAN_DETAILS, SubscriptionPlan, SUBSCRIPTION_PLANS } from '@/lib/constants'
+import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
 const STARTER_PRICE_ID = 'price_1TGb744DtPVuhqnvvqeonWO2'
@@ -23,6 +24,7 @@ interface BillingData {
   hasStripeCustomer: boolean
   subscriptionStatus?: string
   stripeCurrentPeriodEnd?: string
+  currency: string
 }
 
 const mockBillingHistory = [
@@ -67,6 +69,7 @@ export default function BillingPage() {
         hasStripeCustomer: !!settings.store?.subscription?.stripeCustomerId,
         subscriptionStatus: settings.store?.subscription?.status,
         stripeCurrentPeriodEnd: settings.store?.subscription?.stripeCurrentPeriodEnd,
+        currency: settings.store?.currency || 'USD',
       })
     } catch {
       setBillingData({
@@ -74,6 +77,7 @@ export default function BillingPage() {
         productCount: 0,
         orderCount: 0,
         hasStripeCustomer: false,
+        currency: 'USD',
       })
     } finally {
       setLoading(false)
@@ -125,6 +129,7 @@ export default function BillingPage() {
 
   const currentPlan = billingData.plan || SUBSCRIPTION_PLANS.FREE
   const currentPlanDetails = PLAN_DETAILS[currentPlan] || PLAN_DETAILS.FREE
+  const billingCurrency = billingData.currency || 'USD'
   const hasPaidPlan = currentPlan !== SUBSCRIPTION_PLANS.FREE
   const productsLimit = currentPlanDetails.limits.products
   const ordersLimit = currentPlanDetails.limits.orders
@@ -176,7 +181,7 @@ export default function BillingPage() {
           </div>
           <div>
             <div className="font-headline font-black text-4xl tracking-tighter mb-4">
-              ₱{currentPlanDetails.price}.00<span className="text-lg opacity-60">/mo</span>
+              {formatCurrency(currentPlanDetails.price, billingCurrency)}<span className="text-lg opacity-60">/mo</span>
             </div>
             {hasPaidPlan ? (
               <button
@@ -249,7 +254,7 @@ export default function BillingPage() {
                 <div>
                   <h3 className="font-headline font-black uppercase text-2xl mb-1">{plan.name}</h3>
                   <div className="font-headline font-black text-4xl mb-4">
-                    ${plan.price}<span className="text-lg opacity-60">/mo</span>
+                    {formatCurrency(plan.price, billingCurrency)}<span className="text-lg opacity-60">/mo</span>
                   </div>
                   <ul className="space-y-1 mb-6 text-sm font-bold uppercase">
                     {plan.features.slice(0, 4).map((feature) => (
@@ -290,7 +295,7 @@ export default function BillingPage() {
                 <tr key={invoice.id} className="hover:bg-[#f5f0e8] transition-colors">
                   <td className="p-4 font-headline font-black">{invoice.id}</td>
                   <td className="p-4 font-bold uppercase text-sm">{invoice.date}</td>
-                  <td className="p-4 font-headline font-black">₱{invoice.amount}.00</td>
+                  <td className="p-4 font-headline font-black">{formatCurrency(invoice.amount, billingCurrency)}</td>
                   <td className="p-4">
                     <span className="bg-[#1a1a1a] text-white px-3 py-1 text-[10px] font-headline font-black uppercase tracking-widest border-2 border-[#1a1a1a]">
                       {invoice.status}

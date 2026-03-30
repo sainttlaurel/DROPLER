@@ -2,15 +2,14 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Icon } from '@/components/ui/Icon'
+import { getSafeAuthCallbackUrl } from '@/lib/auth-redirect'
 
 
 const loginSchema = z.object({
@@ -22,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
@@ -47,14 +47,7 @@ export default function LoginPage() {
         toast.error('Invalid email or password')
       } else {
         toast.success('Welcome back!')
-        const searchParams = new URLSearchParams(window.location.search)
-        const callbackUrl = searchParams.get('callbackUrl')
-        
-        if (callbackUrl && callbackUrl.startsWith('/store/')) {
-          router.push(callbackUrl)
-        } else {
-          router.push('/dashboard')
-        }
+        router.push(getSafeAuthCallbackUrl(searchParams.toString()))
         router.refresh()
       }
     } catch (error) {
@@ -67,7 +60,9 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
     try {
-      await signIn('google', { callbackUrl: '/dashboard' })
+      await signIn('google', {
+        callbackUrl: getSafeAuthCallbackUrl(searchParams.toString()),
+      })
     } finally {
       setIsGoogleLoading(false)
     }
@@ -98,6 +93,7 @@ export default function LoginPage() {
                 </label>
                 <input
                   {...register('email')}
+                  autoComplete="email"
                   className="w-full bg-transparent border-b-4 border-primary focus:border-primary-container focus:ring-0 px-0 py-3 font-body text-lg placeholder:text-on-surface-variant/40 placeholder:uppercase"
                   id="email"
                   type="email"
@@ -115,12 +111,13 @@ export default function LoginPage() {
                   <label className="block font-headline font-bold uppercase text-xs tracking-widest" htmlFor="password">
                     Password
                   </label>
-                  <Link href="/auth/forgot-password" className="font-headline font-bold text-[10px] uppercase text-tertiary hover:underline">
-                    Forgot Password?
+                  <Link href="/dashboard/legal" className="font-headline font-bold text-[10px] uppercase text-tertiary hover:underline">
+                    Need help?
                   </Link>
                 </div>
                 <input
                   {...register('password')}
+                  autoComplete="current-password"
                   className="w-full bg-transparent border-b-4 border-primary focus:border-primary-container focus:ring-0 px-0 py-3 font-body text-lg placeholder:text-on-surface-variant/40"
                   id="password"
                   type="password"
