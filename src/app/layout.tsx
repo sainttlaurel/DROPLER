@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Providers } from '@/components/providers/SessionProvider'
-
+import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: 'Dropler',
