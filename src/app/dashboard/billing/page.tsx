@@ -7,9 +7,9 @@ import { PLAN_DETAILS, SubscriptionPlan, SUBSCRIPTION_PLANS } from '@/lib/consta
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
-const STARTER_PRICE_ID = 'price_1TGb744DtPVuhqnvvqeonWO2'
+const STARTER_PRICE_ID = 'price_1TGb6I4DtPVuhqnvZbqWc2P9'
 const PRO_PRICE_ID = 'price_1TGb6d4DtPVuhqnvgghek4QU'
-const ENTERPRISE_PRICE_ID = 'price_1TGb6I4DtPVuhqnvZbqWc2P9'
+const ENTERPRISE_PRICE_ID = 'price_1TGb744DtPVuhqnvvqeonWO2'
 
 const PRICE_IDS: Partial<Record<SubscriptionPlan, string>> = {
   STARTER: STARTER_PRICE_ID,
