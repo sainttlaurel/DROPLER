@@ -31,21 +31,13 @@ export interface ShippingFormData {
 /**
  * Payment form data interface
  */
-export type PaymentFormData =
-  | {
-      method: 'CARD'
-      cardNumber: string
-      cardName: string
-      expiryDate: string
-      cvv: string
-    }
-  | {
-      method: 'COD'
-      cardNumber?: string
-      cardName?: string
-      expiryDate?: string
-      cvv?: string
-    }
+export type PaymentFormData = {
+  method: 'CARD' | 'COD'
+  cardNumber?: string
+  cardName?: string
+  expiryDate?: string
+  cvv?: string
+}
 
 /**
  * Cart item interface

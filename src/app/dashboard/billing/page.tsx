@@ -17,6 +17,12 @@ const PRICE_IDS: Partial<Record<SubscriptionPlan, string>> = {
   ENTERPRISE: ENTERPRISE_PRICE_ID,
 }
 
+const UPGRADE_PLANS = [
+  { key: 'STARTER',    name: 'Starter',    price: 19, features: ['500 products', '1,000 orders/mo', 'Priority support'] },
+  { key: 'PRO',        name: 'Pro',        price: 49, features: ['5,000 products', 'Unlimited orders', 'Analytics'] },
+  { key: 'ENTERPRISE', name: 'Enterprise', price: 99, features: ['Unlimited products', 'Unlimited orders', 'Dedicated support'] },
+]
+
 interface BillingData {
   plan: SubscriptionPlan
   productCount: number
@@ -46,6 +52,19 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchBillingData()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success')) {
+      alert('🎉 Subscription activated! Your plan has been upgraded.')
+      window.history.replaceState({}, '', '/dashboard/billing')
+      fetchBillingData()
+    }
+    if (params.get('canceled')) {
+      alert('Checkout canceled. No changes were made.')
+      window.history.replaceState({}, '', '/dashboard/billing')
+    }
   }, [])
 
   const fetchBillingData = async () => {
