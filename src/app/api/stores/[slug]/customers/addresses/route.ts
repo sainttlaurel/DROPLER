@@ -12,11 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-<<<<<<< HEAD
-    const payload = await verifyCustomerToken(token)  // ← await added
-=======
     const payload = await verifyCustomerToken(token)
->>>>>>> 6a6c34fd8f5f3ed2686fd8015e88714e83e678b0
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
@@ -49,11 +45,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-<<<<<<< HEAD
-    const payload = await verifyCustomerToken(token)  // ← await added
-=======
     const payload = await verifyCustomerToken(token)
->>>>>>> 6a6c34fd8f5f3ed2686fd8015e88714e83e678b0
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
