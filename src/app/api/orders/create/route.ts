@@ -26,6 +26,33 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate numeric fields are valid numbers
+    if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal)) {
+      return NextResponse.json({ error: 'Invalid subtotal amount' }, { status: 400 })
+    }
+    if (typeof shipping !== 'number' || shipping < 0 || !isFinite(shipping)) {
+      return NextResponse.json({ error: 'Invalid shipping amount' }, { status: 400 })
+    }
+    if (typeof tax !== 'number' || tax < 0 || !isFinite(tax)) {
+      return NextResponse.json({ error: 'Invalid tax amount' }, { status: 400 })
+    }
+    if (typeof total !== 'number' || total < 0 || !isFinite(total)) {
+      return NextResponse.json({ error: 'Invalid total amount' }, { status: 400 })
+    }
+
+    // Validate items array
+    for (const item of items) {
+      if (!item.productId) {
+        return NextResponse.json({ error: 'Missing product ID in order items' }, { status: 400 })
+      }
+      if (typeof item.quantity !== 'number' || item.quantity < 1 || !isFinite(item.quantity)) {
+        return NextResponse.json({ error: 'Invalid item quantity' }, { status: 400 })
+      }
+      if (!Number.isInteger(item.quantity)) {
+        return NextResponse.json({ error: 'Item quantity must be a whole number' }, { status: 400 })
+      }
+    }
+
     await enforceMonthlyOrderLimit(storeId)
 
     // Generate order number

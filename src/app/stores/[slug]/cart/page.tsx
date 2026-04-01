@@ -28,7 +28,13 @@ export default function CartPage() {
     // Load cart from localStorage
     const savedCart = localStorage.getItem(`cart_${params.slug}`)
     if (savedCart) {
-      setCartItems(JSON.parse(savedCart).items || [])
+      try {
+        const parsed = JSON.parse(savedCart)
+        setCartItems(parsed.items || [])
+      } catch (error) {
+        console.error('Failed to parse cart from localStorage:', error)
+        setCartItems([])
+      }
     }
   }, [params.slug])
 

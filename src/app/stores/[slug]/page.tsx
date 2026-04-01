@@ -164,7 +164,13 @@ export default function StorefrontHomePage() {
   const addToCart = (product: Product) => {
     const cartKey = `cart_${slug}`
     const existing = localStorage.getItem(cartKey)
-    const cart = existing ? JSON.parse(existing) : { items: [], lastUpdated: new Date().toISOString() }
+    let cart
+    try {
+      cart = existing ? JSON.parse(existing) : { items: [], lastUpdated: new Date().toISOString() }
+    } catch (error) {
+      console.error('Failed to parse cart from localStorage:', error)
+      cart = { items: [], lastUpdated: new Date().toISOString() }
+    }
     const existingItem = cart.items.find((i: { productId: string }) => i.productId === product.id)
     if (existingItem) {
       existingItem.quantity += 1
