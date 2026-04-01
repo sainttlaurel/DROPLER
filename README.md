@@ -8,12 +8,12 @@ Built with Next.js 14, PostgreSQL, Prisma. Hosted on Vercel. Pretty standard set
 
 ## What's Been Fixed (April 1, 2026)
 
-- ✅ JWT secrets now actually secret (env var required, crashes if missing)
-- ✅ OAuth providers validate credentials before registering
-- ✅ Orders validate prices/quantities (no negative garbage)
-- ✅ JSON parsing won't crash the app anymore (5 components fixed)
-- ✅ Stripe webhook handler created and ready
-- ✅ OAuth signup can't leave orphaned records (wrapped in transaction)
+-  JWT secrets now actually secret (env var required, crashes if missing)
+-  OAuth providers validate credentials before registering
+-  Orders validate prices/quantities (no negative garbage)
+-  JSON parsing won't crash the app anymore (5 components fixed)
+-  Stripe webhook handler created and ready
+-  OAuth signup can't leave orphaned records (wrapped in transaction)
 
 See `SECURITY_AUDIT.md` for the full rundown.
 
