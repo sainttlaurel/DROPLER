@@ -99,7 +99,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (existingUser) {
-          // Link OAuth account to existing user
+          // Link OAuth account to existing user (non-transactional as it's just one operation)
           const existingAccount = await prisma.account.findUnique({
             where: {
               provider_providerAccountId: {
@@ -127,48 +127,57 @@ export const authOptions: NextAuthOptions = {
           return true
         }
 
-        // Create new user with OAuth
-        const newUser = await prisma.user.create({
-          data: {
-            email: user.email!,
-            name: user.name || user.email!.split('@')[0],
-            image: user.image,
-            password: '', // No password for OAuth users
-            emailVerified: new Date(),
-          },
-        })
-
-        // Create account link
-        await prisma.account.create({
-          data: {
-            userId: newUser.id,
-            type: account.type,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-            access_token: account.access_token,
-            token_type: account.token_type,
-            scope: account.scope,
-            id_token: account.id_token,
-          },
-        })
-
-        // Auto-create store for new OAuth users
-        const storeName = user.name || user.email!.split('@')[0]
-        const storeSlug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now()
-
-        await prisma.store.create({
-          data: {
-            name: storeName + "'s Store",
-            slug: storeSlug,
-            userId: newUser.id,
-            subscription: {
-              create: {
-                plan: 'FREE',
-                status: 'ACTIVE',
+        // Create new user with OAuth - WRAPPED IN TRANSACTION
+        try {
+          await prisma.$transaction(async (tx) => {
+            // Create new user
+            const newUser = await tx.user.create({
+              data: {
+                email: user.email!,
+                name: user.name || user.email!.split('@')[0],
+                image: user.image,
+                password: '', // No password for OAuth users
+                emailVerified: new Date(),
               },
-            },
-          },
-        })
+            })
+
+            // Create account link
+            await tx.account.create({
+              data: {
+                userId: newUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+              },
+            })
+
+            // Auto-create store for new OAuth users
+            const storeName = user.name || user.email!.split('@')[0]
+            const storeSlug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now()
+
+            await tx.store.create({
+              data: {
+                name: storeName + "'s Store",
+                slug: storeSlug,
+                userId: newUser.id,
+                subscription: {
+                  create: {
+                    plan: 'FREE',
+                    status: 'ACTIVE',
+                  },
+                },
+              },
+            })
+          })
+        } catch (error) {
+          console.error('OAuth user creation transaction failed:', error)
+          // Transaction automatically rolled back
+          return false
+        }
 
         return true
       }
