@@ -218,7 +218,7 @@ export function StorefrontLayout({ children }: StorefrontLayoutProps) {
           </div>
         </div>
         <div className="border-t-2 border-on-primary/10 p-12 pt-6">
-          <span className="font-headline uppercase font-medium text-sm text-on-primary/60">© 2024 {storeName.toUpperCase()}. ALL RIGHTS RESERVED.</span>
+          <span className="font-headline uppercase font-medium text-sm text-on-primary/60">© 2026 {storeName.toUpperCase()}. ALL RIGHTS RESERVED.</span>
         </div>
       </footer>
     </div>
