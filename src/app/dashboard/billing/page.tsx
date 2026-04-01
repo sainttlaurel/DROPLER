@@ -33,6 +33,15 @@ interface BillingData {
   currency: string
 }
 
+interface PaymentMethod {
+  id: string
+  brand: string
+  last4: string
+  expMonth: number
+  expYear: number
+  isDefault: boolean
+}
+
 const mockBillingHistory = [
   { id: '#INV-2024-001', date: 'Oct 12, 2024', amount: 249, status: 'Paid' },
   { id: '#INV-2024-002', date: 'Sep 12, 2024', amount: 249, status: 'Paid' },
@@ -47,6 +56,7 @@ const visiblePlans: SubscriptionPlan[] = [
 
 export default function BillingPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [loading, setLoading] = useState(true)
   const [billingLoading, setBillingLoading] = useState(false)
 
@@ -69,14 +79,16 @@ export default function BillingPage() {
 
   const fetchBillingData = async () => {
     try {
-      const [settingsRes, productsRes, ordersRes] = await Promise.all([
+      const [settingsRes, productsRes, ordersRes, paymentMethodsRes] = await Promise.all([
         fetch('/api/settings'),
         fetch('/api/products'),
         fetch('/api/orders?limit=1000'),
+        fetch('/api/billing/payment-methods'),
       ])
       const settings = await settingsRes.json()
       const products = await productsRes.json()
       const orders = await ordersRes.json()
+      const paymentMethodsData = await paymentMethodsRes.json()
 
       const productsList = Array.isArray(products) ? products : (products.products ?? [])
       const ordersList = Array.isArray(orders) ? orders : (orders.orders ?? [])
@@ -90,6 +102,7 @@ export default function BillingPage() {
         stripeCurrentPeriodEnd: settings.store?.subscription?.stripeCurrentPeriodEnd,
         currency: settings.store?.currency || 'USD',
       })
+      setPaymentMethods(paymentMethodsData.paymentMethods || [])
     } catch {
       setBillingData({
         plan: SUBSCRIPTION_PLANS.FREE,
@@ -98,6 +111,7 @@ export default function BillingPage() {
         hasStripeCustomer: false,
         currency: 'USD',
       })
+      setPaymentMethods([])
     } finally {
       setLoading(false)
     }
@@ -248,6 +262,81 @@ export default function BillingPage() {
           <div className="mt-4 h-4 bg-[#e8e3da] border-2 border-[#1a1a1a] w-full overflow-hidden">
             <div className="h-full bg-[#e63b2e] border-r-2 border-[#1a1a1a]" style={{ width: `${orderPct}%` }} />
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        {/* Payment Method Section */}
+        <div className="border-4 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] p-6">
+          <h3 className="font-headline font-black text-2xl uppercase mb-6 pb-4 border-b-4 border-[#1a1a1a]">
+            Payment Method
+          </h3>
+          {paymentMethods.length > 0 ? (
+            <div className="space-y-4">
+              {paymentMethods.map((method) => (
+                <div key={method.id} className="flex items-center justify-between bg-[#f5f0e8] p-4 border-2 border-[#1a1a1a]">
+                  <div className="flex items-center gap-3">
+                    <Icon name="credit_card" size="lg" />
+                    <div>
+                      <p className="font-headline font-bold uppercase text-sm">
+                        {method.brand?.toUpperCase()} ending in {method.last4}
+                      </p>
+                      <p className="text-xs text-gray-600 font-body">
+                        Expires {method.expMonth}/{method.expYear}
+                      </p>
+                    </div>
+                  </div>
+                  {method.isDefault && (
+                    <span className="font-headline font-bold text-[10px] bg-[#1a1a1a] text-white px-2 py-1 uppercase">
+                      Default
+                    </span>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={handleManageBilling}
+                disabled={billingLoading}
+                className="w-full mt-4 py-3 bg-white border-2 border-[#1a1a1a] font-headline font-bold uppercase text-sm hover:bg-[#f5f0e8] transition-colors disabled:opacity-50"
+              >
+                Update Card →
+              </button>
+            </div>
+          ) : (
+            <div className="bg-[#fffbe6] border-2 border-[#ffcc00] p-6 rounded">
+              <p className="font-headline font-bold text-lg text-[#1a1a1a] mb-4">
+                ✨ Start Your Free Plan
+              </p>
+              <p className="font-body text-sm text-gray-700 mb-4">
+                You're on the free plan. No payment method is required to get started. Upgrade anytime when you're ready to expand!
+              </p>
+              <button
+                onClick={() => handleUpgrade(PRO_PRICE_ID)}
+                disabled={billingLoading}
+                className="w-full py-3 bg-[#1a1a1a] text-white font-headline font-bold uppercase text-sm hover:bg-[#0055ff] transition-colors border-2 border-[#1a1a1a] disabled:opacity-50"
+              >
+                {billingLoading ? 'Loading...' : 'Add Payment Method'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Need More Power Section */}
+        <div className="bg-[#1a1a1a] border-4 border-[#1a1a1a] text-white p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] flex flex-col justify-between">
+          <div>
+            <h3 className="font-headline font-black text-2xl uppercase mb-2">
+              Need More Power?
+            </h3>
+            <p className="font-body text-sm opacity-90 mb-6">
+              Unlock enterprise features, unlimited processing, and 24/7 dedicated support to scale your business.
+            </p>
+          </div>
+          <button
+            onClick={() => handleUpgrade(PRO_PRICE_ID)}
+            disabled={billingLoading}
+            className="w-full py-3 bg-[#ffcc00] text-[#1a1a1a] border-2 border-[#ffcc00] font-headline font-black uppercase hover:bg-white transition-colors disabled:opacity-50"
+          >
+            {billingLoading ? 'Loading...' : 'View Plans'}
+          </button>
         </div>
       </div>
 
