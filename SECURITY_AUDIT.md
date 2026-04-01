@@ -6,7 +6,7 @@
 
 ---
 
-## ✅ Already Fixed (Done with these)
+## Already Fixed (Done with these)
 
 1. **JWT secret wasn't secret** - `src/lib/customer-auth.ts`
    - Was hardcoded as 'your-secret-key-change-in-production' lol
@@ -49,9 +49,9 @@
 
 ---
 
-## 🚨 YOUR TURN - DO THIS TODAY
+## YOUR TURN - DO THIS TODAY
 
-- [ ] **Rotate all the secrets** (45 mins) ⚠️ URGENT
+- [ ] **Rotate all the secrets** (45 mins) URGENT
   - Follow `CREDENTIAL_ROTATION.md` for exact commands
   - New NEXTAUTH_SECRET
   - New Google OAuth creds
@@ -71,13 +71,13 @@
   - Tooltips appear on hover
 
 - [ ] **Deploy to production** (varies)
-  - Push code to main (already done ✓)
+  - Push code to main (already done)
   - Update .env on hosting provider
   - Test in production
 
 ---
 
-## 🎯 NEXT WEEK - Priority 2 TODO (8-10 hours)
+## NEXT WEEK - Priority 2 TODO (8-10 hours)
 
 1. **Email service** (2 hrs)
    - Orders need confirmation emails
@@ -113,7 +113,7 @@
 
 ---
 
-## 🔒 BEFORE LAUNCH - Priority 3 (Polish)
+## BEFORE LAUNCH - Priority 3 (Polish)
 
 Don't need these immediately, just keep in mind:
 
