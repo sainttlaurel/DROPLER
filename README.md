@@ -19,24 +19,6 @@ See `SECURITY_AUDIT.md` for the full rundown.
 
 ---
 
-## What You Gotta Do Next
-
-**Today:**
-- [ ] Rotate credentials (see `CREDENTIAL_ROTATION.md`)
-- [ ] Test logins work
-- [ ] Deploy to production
-
-**This Week (if you got time):**
-- [ ] Email service (orders need confirmation emails)
-- [ ] Environment validation at startup
-- [ ] Rate limiting on auth endpoints
-- [ ] Product price/inventory bounds checking
-- [ ] URL sanitization (no SSRF attacks)
-
-See `SECURITY_AUDIT.md` for priority breakdown and time estimates.
-
----
-
 ## Tech Stack
 
 - **Framework:** Next.js 14 (React)
