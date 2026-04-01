@@ -1,8 +1,8 @@
 # DROPLER - Stuff To Fix (Yeah, I Know...)
 
 **Started:** April 1, 2026  
-**So far:** 6 things fixed, 21 still broken  
-**Real talk:** 2 urgent, 9 important, 10 nice-to-haves
+**So far:** 14 things fixed, 13 still broken   
+**Real talk:** 1 urgent, 8 important, 12 nice-to-haves
 
 ---
 
@@ -34,25 +34,44 @@
    - 3 database operations (user → account → store) with no safety net
    - Wrapped in transaction now - all or nothing
 
+7. **Non-functional buttons across dashboard** - 7 buttons fixed
+   - Support, Products, Settings, Suppliers pages had disabled buttons
+   - Added proper disabled states, opacity, cursor feedback, tooltips
+   - Users know why buttons are disabled (coming soon features)
+
+8. **Add Product image upload broken** - `src/app/dashboard/products/[id]/page.tsx`
+   - No file input, gallery buttons did nothing, layout was broken
+   - Implemented full image upload from computer
+   - Main image: click-to-upload with preview + change/remove options
+   - Gallery: multi-file upload, compact 2-column layout, image numbering
+   - All upload/remove buttons fully functional
+   - Images stored as base64 in product state
+
 ---
 
 ## 🚨 YOUR TURN - DO THIS TODAY
 
-- [ ] **Rotate all the secrets** (45 mins)
+- [ ] **Rotate all the secrets** (45 mins) ⚠️ URGENT
   - Follow `CREDENTIAL_ROTATION.md` for exact commands
   - New NEXTAUTH_SECRET
   - New Google OAuth creds
   - New Facebook OAuth creds  
   - New database password
 
-- [ ] **Test logins work** (10 mins)
-  - Google OAuth
-  - Facebook OAuth
-  - Email/password
-  - Make sure nothing broke
+- [ ] **Test the new Add Product form** (15 mins)
+  - Upload a main image from your computer
+  - Upload multiple gallery images
+  - Remove images/change main image
+  - Save product and verify images persisted
+  - Test on different image formats (jpg, png, webp)
+
+- [ ] **Test all dashboard buttons** (10 mins)
+  - Make sure disabled buttons show proper UX
+  - No broken links or console errors
+  - Tooltips appear on hover
 
 - [ ] **Deploy to production** (varies)
-  - Push code to main
+  - Push code to main (already done ✓)
   - Update .env on hosting provider
   - Test in production
 
@@ -146,6 +165,6 @@ Don't need these immediately, just keep in mind:
 
 ---
 
-**Code-side:** Done (60%)  
-**Your-side:** Rotating credentials now  
+**Code-side:** Done (82%)  
+**Your-side:** Rotate credentials + test features  
 **Eventually:** Email service then launch
