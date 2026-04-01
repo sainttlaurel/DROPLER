@@ -1,3 +1,17 @@
+/**
+ * Dashboard Products Page
+ * 
+ * Main products management interface with:
+ * - Product listing with search and filtering capabilities
+ * - Support for image uploads via dedicated product detail page
+ * - Bulk actions (publish, draft, delete)
+ * - Category and status filtering
+ * - Individual product deletion
+ * 
+ * Note: Image upload functionality has been moved to the product detail page
+ * for better UX and handling of multi-file gallery uploads.
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
