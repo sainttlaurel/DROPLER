@@ -63,6 +63,62 @@
 
 ---
 
+---
+
+## 📍 ROADMAP - NEXT TODOS AFTER credential rotation
+
+### ✅ THIS SESSION - Priority 1 (COMPLETE, Awaiting Your Credential Rotation)
+- [x] OAuth transaction safety - DONE
+- [x] Stripe webhook handler - DONE  
+- [x] Create credential rotation guide - DONE
+- ⏳ Generate new credentials (you need to do this)
+- ⏳ Test logins work
+- ⏳ Deploy to production
+
+### 🎯 NEXT SESSION - Priority 2 (THIS WEEK - 8-10 hours work)
+1. **Email Service Integration** (2 hours)
+   - Implement Resend or SendGrid
+   - Send order confirmations
+   - Send shipping notifications
+
+2. **Environment Variable Validation** (1 hour)
+   - Create `src/lib/env.ts` with Zod schema
+   - Validate at app startup
+   - Prevent runtime errors
+
+3. **Add Rate Limiting** (1.5 hours)
+   - Install `@upstash/ratelimit`
+   - Protect /api/auth/register and /api/auth/signin
+   - Threshold: 5 requests/minute per IP
+
+4. **Product Price/Inventory Validation** (1 hour)
+   - Add bounds checks: `price > 0`, `inventory >= 0`
+   - Prevent negative values in database
+
+5. **URL Input Sanitization** (1 hour)
+   - Protect product scrape endpoint
+   - Allow only http/https protocols
+   - Prevent SSRF attacks
+
+6. **OAuth State Validation** (0.5 hour)
+   - Add state parameter to OAuth flow
+   - Prevent CSRF attacks
+
+7. **Incomplete Error Handling** (2 hours)
+   - Fix empty catch blocks
+   - Add proper error logging
+
+### 🔐 BEFORE LAUNCH - Priority 3 (POLISH & HARDENING)
+- Request logging middleware (Pino)
+- React error boundaries
+- CORS configuration
+- Sentry error tracking
+- API response type safety
+- Full integration tests
+- CI/CD with GitHub Actions
+
+---
+
 ## 🔴 CRITICAL ISSUES - ACTION REQUIRED
 
 ### Priority 1: IMMEDIATE (DO THIS TODAY)
@@ -234,23 +290,41 @@
 
 ---
 
-## Next Steps
+## 🚀 YOUR ACTION ITEMS
 
-1. **Today:**
-   - Fix .env secrets exposure
-   - Implement missing webhook handler
-   - Set NEXTAUTH_SECRET requirement
+### IMMEDIATE - Complete Priority 1 (This Hour)
+✅ Code side is done. Your turn:
+1. Open `CREDENTIAL_ROTATION.md`
+2. Generate new NEXTAUTH_SECRET
+3. Rotate Google & Facebook OAuth credentials
+4. Update local .env and test
+5. Deploy to production
 
-2. **This Week:**
-   - Add email service integration
-   - Implement rate limiting
-   - Add environment validation
+**Estimated time:** 45-50 minutes
 
-3. **Before Launch:**
-   - Full security audit
-   - Penetration test
-   - Load testing
-   - User acceptance testing
+---
+
+## Next Steps (After Credentials Deployed)
+
+1. **Tomorrow or This Week - Start Priority 2:**
+   - [ ] Email service integration (pick Resend/SendGrid)
+   - [ ] Environment variable validation at startup
+   - [ ] Rate limiting on auth endpoints
+   - [ ] Product price bounds validation
+   - [ ] URL sanitization on scrape endpoint
+
+2. **Before Production Launch - Priority 3:**
+   - [ ] Request logging middleware
+   - [ ] React error boundaries
+   - [ ] CORS configuration
+   - [ ] Sentry error tracking
+   - [ ] Full integration tests
+
+3. **Final Security Gate:**
+   - [ ] Full security audit
+   - [ ] Penetration test
+   - [ ] Load testing
+   - [ ] User acceptance testing
 
 ---
 
@@ -263,5 +337,6 @@
 
 ---
 
-**Last Updated:** April 1, 2026  
-**Next Review:** After fixes completed
+**Last Updated:** April 1, 2026 - Roadmap Updated  
+**Session Status:** Priority 1: 60% Complete (2/4 items done + guide created, awaiting credential rotation)
+**Next Review:** After user completes credential rotation
