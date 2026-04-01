@@ -227,7 +227,7 @@ export default function SupportPage() {
                     {/* Toolbar */}
                     <div className="flex items-center gap-1 p-2 bg-stone-50 border-b-2 border-[#1a1a1a]">
                       {['format_bold', 'format_italic', 'link', 'image', 'attach_file'].map((icon) => (
-                        <button key={icon} className="p-1 hover:bg-[#ffcc00] transition-colors">
+                        <button key={icon} disabled className="p-1 hover:bg-[#ffcc00] transition-colors opacity-50 cursor-not-allowed" title="Feature coming soon">
                           <Icon name={icon} size="sm" />
                         </button>
                       ))}
@@ -249,7 +249,7 @@ export default function SupportPage() {
                         <span className="font-headline font-bold text-xs uppercase">Internal Note</span>
                       </label>
                       <div className="flex gap-3">
-                        <button className="px-6 py-2 border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#eee9e0] transition-all flex items-center gap-2">
+                        <button disabled className="px-6 py-2 border-2 border-[#1a1a1a] font-headline font-black uppercase hover:bg-[#eee9e0] transition-all flex items-center gap-2 opacity-50 cursor-not-allowed" title="Feature coming soon">
                           <Icon name="schedule" size="sm" /> Later
                         </button>
                         <button

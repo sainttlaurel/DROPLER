@@ -150,8 +150,8 @@ export default function SuppliersPage() {
             <p className="font-body text-lg opacity-80 mb-8">Connect your API keys and webhook listeners to automate order fulfillment across all active suppliers.</p>
           </div>
           <div className="flex gap-4">
-            <button className="bg-[#ffcc00] text-[#1a1a1a] px-8 py-4 font-headline font-bold uppercase border-2 border-[#f5f0e8] hover:invert active:translate-x-1 active:translate-y-1 transition-all">Configure APIs</button>
-            <button className="border-2 border-[#f5f0e8] px-8 py-4 font-headline font-bold uppercase hover:bg-[#f5f0e8] hover:text-[#1a1a1a] active:translate-x-1 active:translate-y-1 transition-all">Logs</button>
+            <button disabled className="bg-[#ffcc00] text-[#1a1a1a] px-8 py-4 font-headline font-bold uppercase border-2 border-[#f5f0e8] hover:invert active:translate-x-1 active:translate-y-1 transition-all opacity-50 cursor-not-allowed" title="Feature coming soon">Configure APIs</button>
+            <button disabled className="border-2 border-[#f5f0e8] px-8 py-4 font-headline font-bold uppercase hover:bg-[#f5f0e8] hover:text-[#1a1a1a] active:translate-x-1 active:translate-y-1 transition-all opacity-50 cursor-not-allowed" title="Feature coming soon">Logs</button>
           </div>
         </div>
 

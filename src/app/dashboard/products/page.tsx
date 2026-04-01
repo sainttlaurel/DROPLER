@@ -115,7 +115,7 @@ export default function ProductsPage() {
           <p className="font-bold text-xl border-l-8 border-[#ffcc00] pl-4 uppercase">Manage your dropshipping catalog.</p>
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-5 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none text-sm">
+          <button disabled className="flex items-center gap-2 px-5 py-3 border-4 border-[#1a1a1a] font-headline font-black uppercase shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-[#1a1a1a] hover:text-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none text-sm opacity-50 cursor-not-allowed" title="Feature coming soon">
             <Icon name="link" size="sm" /> Import URL
           </button>
           <Link href="/dashboard/products/new">

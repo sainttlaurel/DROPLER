@@ -167,7 +167,7 @@ export default function SettingsPage() {
               <span className="font-headline font-bold text-xl uppercase">Live & Online</span>
             </div>
             <p className="font-medium text-sm leading-tight mb-8">All systems functional. Global checkout is active for all territories.</p>
-            <button className="w-full bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] p-3 font-headline font-bold uppercase hover:bg-[#1a1a1a] hover:text-white transition-all">
+            <button disabled className="w-full bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] p-3 font-headline font-bold uppercase hover:bg-[#1a1a1a] hover:text-white transition-all opacity-50 cursor-not-allowed" title="Feature coming soon">
               Maintenance Mode
             </button>
           </div>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
               <h3 className="text-3xl font-headline font-black uppercase text-[#e63b2e]">Danger Zone</h3>
               <p className="font-medium text-[#93000a] max-w-xl">Once you delete a store, there is no going back. All products, order history, and customer data will be permanently wiped from our servers.</p>
             </div>
-            <button className="bg-[#e63b2e] text-white border-2 border-[#1a1a1a] font-headline uppercase font-bold px-8 py-4 shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-white hover:text-[#e63b2e] transition-all active:shadow-none active:translate-x-1 active:translate-y-1 shrink-0">
+            <button disabled className="bg-[#e63b2e] text-white border-2 border-[#1a1a1a] font-headline uppercase font-bold px-8 py-4 shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:bg-white hover:text-[#e63b2e] transition-all active:shadow-none active:translate-x-1 active:translate-y-1 shrink-0 opacity-50 cursor-not-allowed" title="Feature coming soon">
               Delete Store Permanently
             </button>
           </div>
