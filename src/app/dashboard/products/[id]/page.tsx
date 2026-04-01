@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -52,6 +52,8 @@ export default function ProductDetailPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [newTag, setNewTag] = useState('')
+  const mainImageInputRef = useRef<HTMLInputElement>(null)
+  const galleryImageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCategories()
@@ -179,6 +181,61 @@ export default function ProductDetailPage() {
     setProduct({ ...product, tags: product.tags.filter((t) => t !== tag) })
   }
 
+  const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !product) return
+
+    try {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string
+        setProduct({ ...product, image: base64 })
+        toast.success('Main image uploaded')
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      toast.error('Failed to upload image')
+    }
+  }
+
+  const handleGalleryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || !product) return
+
+    try {
+      const newImages: string[] = []
+      let filesProcessed = 0
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const reader = new FileReader()
+        
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string
+          newImages.push(base64)
+          filesProcessed++
+
+          if (filesProcessed === files.length) {
+            setProduct({ ...product, images: [...product.images, ...newImages] })
+            toast.success(`${newImages.length} image(s) added to gallery`)
+          }
+        }
+        reader.readAsDataURL(file)
+      }
+    } catch (error) {
+      toast.error('Failed to upload images')
+    }
+  }
+
+  const removeImage = (index: number) => {
+    if (!product) return
+    setProduct({
+      ...product,
+      images: product.images.filter((_, i) => i !== index),
+    })
+    toast.success('Image removed')
+  }
+
   const calculateMargin = () => {
     if (!product || product.price === 0) return { margin: 0, profit: 0 }
     const profit = product.price - product.cost
@@ -296,49 +353,109 @@ export default function ProductDetailPage() {
             </div>
           </section>
 
+          {/* Hidden File Inputs */}
+          <input
+            ref={mainImageInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleMainImageUpload}
+          />
+          <input
+            ref={galleryImageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={handleGalleryImageUpload}
+          />
+
           {/* Media Gallery */}
           <section className="border-4 border-primary bg-white p-8 neo-shadow-lg">
             <h2 className="text-2xl font-black uppercase mb-6 border-b-4 border-primary inline-block font-headline">
               Media Gallery
             </h2>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="space-y-8">
               {/* Main Image */}
-              <div className="col-span-4 aspect-video relative border-4 border-primary bg-surface flex items-center justify-center group">
+              <div className="border-4 border-primary bg-surface min-h-[250px] flex items-center justify-center group relative overflow-hidden">
                 {product.image ? (
                   <>
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover max-h-[350px]"
                     />
-                    <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <Button variant="yellow" size="sm">
-                        Replace Main Image
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <Button
+                        variant="yellow"
+                        size="sm"
+                        onClick={() => mainImageInputRef.current?.click()}
+                      >
+                        Change Image
                       </Button>
+                      <button
+                        className="w-10 h-10 border-2 border-white text-white flex items-center justify-center hover:bg-white hover:text-primary transition-all"
+                        onClick={() => setProduct({ ...product, image: null })}
+                        title="Remove main image"
+                      >
+                        <Icon name="close" className="text-lg" />
+                      </button>
                     </div>
                   </>
                 ) : (
-                  <div className="text-center">
-                    <Icon name="add_photo_alternate" size="xl" className="opacity-40 mb-2" />
-                    <p className="font-headline font-bold uppercase text-sm">Upload Main Image</p>
+                  <div
+                    className="text-center cursor-pointer w-full h-full flex flex-col items-center justify-center hover:bg-primary-container transition-colors"
+                    onClick={() => mainImageInputRef.current?.click()}
+                    role="button"
+                  >
+                    <Icon name="add_photo_alternate" size="xl" className="opacity-60 mb-2" />
+                    <p className="font-headline font-bold uppercase text-sm opacity-60">Click to upload main image</p>
                   </div>
                 )}
               </div>
 
-              {/* Thumbnails */}
-              {product.images.slice(0, 3).map((img, idx) => (
-                <div key={idx} className="relative aspect-square border-4 border-primary bg-surface overflow-hidden group">
-                  <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button className="absolute top-1 right-1 bg-secondary text-white w-6 h-6 border-2 border-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Icon name="close" className="text-xs" />
-                  </button>
+              {/* Gallery Grid - Compact 2 Column Layout */}
+              {product.images.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-black uppercase text-xs font-headline">Gallery Images ({product.images.length})</h3>
+                  <div className="grid grid-cols-2 gap-4 max-w-2xl">
+                    {product.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square border-4 border-primary bg-surface overflow-hidden group"
+                      >
+                        <img
+                          src={img}
+                          alt={`Gallery ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            className="w-10 h-10 border-2 border-white text-white flex items-center justify-center hover:bg-white hover:text-secondary transition-all"
+                            onClick={() => removeImage(idx)}
+                            title="Remove image"
+                          >
+                            <Icon name="close" className="text-lg" />
+                          </button>
+                        </div>
+                        <div className="absolute top-2 left-2 bg-primary text-primary-container px-2 py-1 text-xs font-black font-headline">
+                          #{idx + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
 
-              {/* Add New */}
-              <div className="relative aspect-square border-4 border-primary border-dashed flex flex-col items-center justify-center hover:bg-primary-container transition-colors cursor-pointer group">
-                <Icon name="add_photo_alternate" size="lg" />
-                <span className="text-[10px] font-black uppercase mt-1 font-headline">Add New</span>
+              {/* Add Gallery Images Button */}
+              <div
+                className="border-4 border-primary border-dashed bg-surface-container py-12 text-center cursor-pointer hover:bg-primary-container transition-colors"
+                onClick={() => galleryImageInputRef.current?.click()}
+                role="button"
+              >
+                <Icon name="add_photo_alternate" size="lg" className="mx-auto mb-2 opacity-60" />
+                <p className="font-headline font-bold uppercase text-sm">Add Gallery Images</p>
+                <p className="text-xs opacity-60 mt-1">from your computer</p>
               </div>
             </div>
           </section>
